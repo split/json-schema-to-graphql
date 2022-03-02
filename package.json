@@ -1,0 +1,69 @@
+{
+  "name": "json-schema-to-graphql",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Henri Lahtinen",
+  "main": "dist/index.js",
+  "module": "dist/json-schema-to-graphql.esm.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "bin": {
+    "json-schema-to-graphql": "dist/cli.js"
+  },
+  "scripts": {
+    "prepare": "patch-package",
+    "analyze": "size-limit --why",
+    "build": "dts build",
+    "lint": "dts lint",
+    "prepare": "dts build",
+    "size": "size-limit",
+    "start": "dts watch",
+    "test": "dts test"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "dts lint"
+    }
+  },
+  "prettier": {
+    "printWidth": 120,
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "peerDependencies": {},
+  "engines": {
+    "node": ">=12"
+  },
+  "size-limit": [
+    {
+      "path": "dist/json-schema-to-graphql.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/json-schema-to-graphql.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^7.0.8",
+    "@tsconfig/recommended": "^1.0.1",
+    "dts-cli": "^1.4.0",
+    "husky": "^7.0.4",
+    "patch-package": "^6.4.7",
+    "prettier": "^2.5.1",
+    "size-limit": "^7.0.8",
+    "tslib": "^2.3.1",
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "graphql": "^16.3.0",
+    "json-schema-to-typescript": "^10.1.5"
+  }
+}
