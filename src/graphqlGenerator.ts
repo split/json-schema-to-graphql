@@ -5,9 +5,11 @@ import {
   GraphQLBoolean,
   GraphQLFieldConfig,
   GraphQLFloat,
+  GraphQLList,
   GraphQLNamedType,
   GraphQLNonNull,
   GraphQLObjectType,
+  GraphQLOutputType,
   GraphQLSchema,
   GraphQLString,
 } from 'graphql/type'
@@ -42,6 +44,9 @@ function declareNamedTypes(ast: AST, processed = new Set<AST>()): GraphQLNamedTy
 
       return paramTypes
     }
+    case 'ARRAY':
+      return declareNamedTypes(ast.params, processed)
+
     default:
       return []
   }
@@ -67,7 +72,7 @@ function declareNamedType(ast: TNamedInterface) {
   })
 }
 
-function declareStandaloneType(ast: AST) {
+function declareStandaloneType(ast: AST): GraphQLOutputType | undefined {
   switch (ast.type) {
     case 'STRING':
       return GraphQLString
@@ -75,5 +80,8 @@ function declareStandaloneType(ast: AST) {
       return GraphQLFloat
     case 'BOOLEAN':
       return GraphQLBoolean
+    case 'ARRAY':
+      const itemType = declareStandaloneType(ast.params)
+      return itemType && new GraphQLList(itemType)
   }
 }

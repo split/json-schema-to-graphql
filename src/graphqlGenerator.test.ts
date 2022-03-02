@@ -65,4 +65,21 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should compile list of strings', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Store',
+      additionalProperties: false,
+      properties: {
+        names: { type: 'array', items: { type: 'string' } },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Store {
+        names: [String]
+      }"
+    `)
+  })
 })
