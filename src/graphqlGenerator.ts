@@ -6,6 +6,7 @@ import {
   GraphQLFieldConfig,
   GraphQLFloat,
   GraphQLNamedType,
+  GraphQLNonNull,
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
@@ -34,7 +35,6 @@ function declareNamedTypes(ast: AST, processed = new Set<AST>()): GraphQLNamedTy
       const paramTypeASTs = ast.params.map((param) => param.ast).concat(ast.superTypes)
       const paramTypes = paramTypeASTs.flatMap((ast) => declareNamedTypes(ast, processed))
 
-      console.log(ast, paramTypeASTs, paramTypes)
       if (hasStandaloneName(ast)) {
         const namedType = declareNamedType(ast)
         return [namedType, ...paramTypes]
@@ -56,10 +56,11 @@ function declareNamedType(ast: TNamedInterface) {
         if (param.isPatternProperty || param.isUnreachableDefinition) {
           return []
         }
-        const type = declareStandaloneType(param.ast)
-        if (!type) {
+        const standaloneType = declareStandaloneType(param.ast)
+        if (!standaloneType) {
           return []
         }
+        const type = param.isRequired ? new GraphQLNonNull(standaloneType) : standaloneType
         return [[param.keyName, { type }]]
       })
     ),

@@ -43,4 +43,26 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should compile required fields', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car model',
+      additionalProperties: false,
+      properties: {
+        model: { type: 'string' },
+        year: { type: 'number' },
+        electric: { type: 'boolean' },
+      },
+      required: ['model', 'year', 'electric'],
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type CarModel {
+        model: String!
+        year: Float!
+        electric: Boolean!
+      }"
+    `)
+  })
 })
