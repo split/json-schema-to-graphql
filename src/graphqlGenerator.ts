@@ -82,6 +82,6 @@ function declareStandaloneType(ast: AST): GraphQLOutputType | undefined {
       return GraphQLBoolean
     case 'ARRAY':
       const itemType = declareStandaloneType(ast.params)
-      return itemType && new GraphQLList(itemType)
+      return itemType && new GraphQLList(new GraphQLNonNull(itemType))
   }
 }

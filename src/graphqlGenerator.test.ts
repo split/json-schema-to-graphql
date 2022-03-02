@@ -78,7 +78,7 @@ describe('generateGraphQL', () => {
     })
     expect(graphql).toMatchInlineSnapshot(`
       "type Store {
-        names: [String]
+        names: [String!]
       }"
     `)
   })
