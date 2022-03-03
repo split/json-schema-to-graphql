@@ -1,4 +1,4 @@
-import { printSchema } from 'graphql'
+import { printSchema, typeFromAST } from 'graphql'
 import { DEFAULT_OPTIONS, Options } from 'json-schema-to-typescript'
 import { AST, hasStandaloneName, TNamedInterface } from 'json-schema-to-typescript/dist/src/types/AST'
 import {
@@ -6,7 +6,7 @@ import {
   GraphQLFieldConfig,
   GraphQLFloat,
   GraphQLList,
-  GraphQLNamedType,
+  GraphQLNamedOutputType,
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLOutputType,
@@ -15,6 +15,8 @@ import {
 } from 'graphql/type'
 
 export type GeneratorOptions = Pick<Options, 'bannerComment'>
+
+type TypeMap = Map<string, GraphQLNamedOutputType>
 
 export function generateGraphQL(ast: AST, options: GeneratorOptions = DEFAULT_OPTIONS) {
   const schema = generateGraphQLSchema(ast)
@@ -28,21 +30,19 @@ export function generateGraphQLSchema(ast: AST) {
   return schema
 }
 
-function declareNamedTypes(ast: AST, processed = new Set<AST>()): GraphQLNamedType[] {
+function declareNamedTypes(ast: AST, processed = new Set<AST>(), types: TypeMap = new Map()): GraphQLNamedOutputType[] {
   if (processed.has(ast)) return []
   processed.add(ast)
 
   switch (ast.type) {
     case 'INTERFACE': {
-      const paramTypeASTs = ast.params.map((param) => param.ast).concat(ast.superTypes)
-      const paramTypes = paramTypeASTs.flatMap((ast) => declareNamedTypes(ast, processed))
-
       if (hasStandaloneName(ast)) {
-        const namedType = declareNamedType(ast)
-        return [namedType, ...paramTypes]
+        const namedType = declareNamedType(ast, types)
+        return [namedType]
+      } else {
+        const paramTypeASTs = ast.params.map((param) => param.ast).concat(ast.superTypes)
+        return paramTypeASTs.flatMap((ast) => declareNamedTypes(ast, processed))
       }
-
-      return paramTypes
     }
     case 'ARRAY':
       return declareNamedTypes(ast.params, processed)
@@ -52,27 +52,40 @@ function declareNamedTypes(ast: AST, processed = new Set<AST>()): GraphQLNamedTy
   }
 }
 
-function declareNamedType(ast: TNamedInterface) {
-  return new GraphQLObjectType({
+function declareNamedType(ast: TNamedInterface, types: TypeMap) {
+  if (types.has(ast.standaloneName)) {
+    return types.get(ast.standaloneName)!
+  }
+  const namedType = new GraphQLObjectType({
     name: ast.standaloneName,
     description: ast.comment,
-    fields: Object.fromEntries(
-      ast.params.flatMap<[string, GraphQLFieldConfig<unknown, unknown, unknown>]>((param) => {
-        if (param.isPatternProperty || param.isUnreachableDefinition) {
-          return []
-        }
-        const standaloneType = declareStandaloneType(param.ast)
-        if (!standaloneType) {
-          return []
-        }
-        const type = param.isRequired ? new GraphQLNonNull(standaloneType) : standaloneType
-        return [[param.keyName, { type }]]
-      })
-    ),
+    fields: () =>
+      Object.fromEntries(
+        ast.params.flatMap<[string, GraphQLFieldConfig<unknown, unknown, unknown>]>((param) => {
+          if (param.isPatternProperty || param.isUnreachableDefinition) {
+            return []
+          }
+          const standaloneType = declareStandaloneType(param.ast, types)
+          if (!standaloneType) {
+            return []
+          }
+
+          const type = param.isRequired ? new GraphQLNonNull(standaloneType) : standaloneType
+          return [[param.keyName, { type }]]
+        })
+      ),
   })
+  types.set(ast.standaloneName, namedType)
+  return namedType
 }
 
-function declareStandaloneType(ast: AST): GraphQLOutputType | undefined {
+function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | undefined {
+  if (hasStandaloneName(ast)) {
+    if (ast.type === 'ENUM') {
+      throw new TypeError('Enums not implemented yet')
+    }
+    return declareNamedType(ast, types)
+  }
   switch (ast.type) {
     case 'STRING':
       return GraphQLString
@@ -81,7 +94,7 @@ function declareStandaloneType(ast: AST): GraphQLOutputType | undefined {
     case 'BOOLEAN':
       return GraphQLBoolean
     case 'ARRAY':
-      const itemType = declareStandaloneType(ast.params)
+      const itemType = declareStandaloneType(ast.params, types)
       return itemType && new GraphQLList(new GraphQLNonNull(itemType))
   }
 }

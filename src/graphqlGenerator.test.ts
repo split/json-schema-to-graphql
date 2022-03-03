@@ -66,6 +66,34 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile named type as field value', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Owned things',
+      additionalProperties: false,
+      properties: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type OwnedThings {
+        car: Car
+      }
+
+      type Car {
+        model: String
+      }"
+    `)
+  })
+
   it('should compile list of strings', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',
@@ -79,6 +107,38 @@ describe('generateGraphQL', () => {
     expect(graphql).toMatchInlineSnapshot(`
       "type Store {
         names: [String!]
+      }"
+    `)
+  })
+
+  it('should compile list of named types', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Parking lot',
+      additionalProperties: false,
+      properties: {
+        cars: { type: 'array', items: { $ref: '#/$defs/car' } },
+      },
+      required: ['cars'],
+      $defs: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type ParkingLot {
+        cars: [Car!]!
+      }
+
+      type Car {
+        model: String
       }"
     `)
   })
