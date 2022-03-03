@@ -62,7 +62,8 @@ function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: T
 }
 
 function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | undefined {
-  if (hasStandaloneName(ast)) {
+  // There is no way to define named type for list in GraphQL so keeping those standalone
+  if (ast.type !== 'ARRAY' && hasStandaloneName(ast)) {
     return declareNamedType(ast, types)
   }
   switch (ast.type) {

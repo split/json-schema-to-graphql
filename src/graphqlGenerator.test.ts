@@ -183,6 +183,38 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should keep named lists as standalone types', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Parking lot',
+      additionalProperties: false,
+      properties: {
+        cars: { title: 'Cars', type: 'array', items: { $ref: '#/$defs/car' } },
+      },
+      required: ['cars'],
+      $defs: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type ParkingLot {
+        cars: [Car!]!
+      }
+
+      type Car {
+        model: String
+      }"
+    `)
+  })
+
   it('should compile union of named types', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',
