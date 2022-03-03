@@ -86,7 +86,7 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
     fields: () =>
       Object.fromEntries(
         ast.params.flatMap<[string, GraphQLFieldConfig<unknown, unknown, unknown>]>((param) => {
-          if (param.isPatternProperty || param.isUnreachableDefinition) {
+          if (param.isPatternProperty || param.isUnreachableDefinition || param.keyName === '[k: string]') {
             return []
           }
           const standaloneType = declareStandaloneType(param.ast ?? param, types)

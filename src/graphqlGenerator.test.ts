@@ -134,6 +134,26 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile objects without generic fields', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Driver',
+      additionalProperties: false,
+      properties: {
+        name: { type: 'string' },
+      },
+      patternProperties: {
+        '.*': { type: 'string' },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Driver {
+        name: String
+      }"
+    `)
+  })
+
   it('should compile list of strings', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',
