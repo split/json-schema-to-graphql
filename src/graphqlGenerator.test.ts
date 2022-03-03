@@ -356,4 +356,19 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should sanitize names that contain characters not valid to GraphQL', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'string',
+      title: 'Power',
+      enum: ['FOO-8_X', 'PIU$#59'],
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "enum Power {
+        FOO_8_X
+        PIU_59
+      }"
+    `)
+  })
 })

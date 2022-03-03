@@ -122,7 +122,7 @@ function declareEnumType(ast: TEnum, types: TypeMap) {
   const enumType = new GraphQLEnumType({
     name: ast.standaloneName,
     description: ast.comment,
-    values: Object.fromEntries(ast.params.map((param) => [param.keyName, { value: param.keyName }])),
+    values: Object.fromEntries(ast.params.map((param) => [sanitizeName(param.keyName), { value: param.keyName }])),
   })
   types.set(ast.standaloneName, enumType)
   return enumType
@@ -140,7 +140,7 @@ function declareStringUnionAsEnum(ast: TLiteralNamedUnion, types: TypeMap) {
   const enumType = new GraphQLEnumType({
     name: ast.standaloneName,
     description: ast.comment,
-    values: Object.fromEntries(ast.params.map((param) => [param.params, { value: param.params }])),
+    values: Object.fromEntries(ast.params.map((param) => [sanitizeName(param.params), { value: param.params }])),
   })
   types.set(ast.standaloneName, enumType)
   return enumType
@@ -148,4 +148,8 @@ function declareStringUnionAsEnum(ast: TLiteralNamedUnion, types: TypeMap) {
 
 function isLiteralNamedUnion(ast: TUnion): ast is TLiteralNamedUnion {
   return hasStandaloneName(ast) && ast.type === 'UNION' && ast.params[0].type === 'LITERAL'
+}
+
+function sanitizeName(name: string): string {
+  return name.replace(/[^[_a-zA-Z0-9_]+/g, '_')
 }
