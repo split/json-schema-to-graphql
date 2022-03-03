@@ -11,7 +11,7 @@ const defaultTestOptions: Options = {
   },
 }
 
-function compileSchema(schema: JSONSchema, options: Options = defaultTestOptions) {
+function compileSchema(schema: JSONSchema, options: Partial<Options> = defaultTestOptions) {
   return compile(schema, 'test', options)
 }
 
@@ -20,6 +20,26 @@ describe('generateGraphQL', () => {
     expect(generateGraphQL({ type: 'NULL' }, { bannerComment: '/* I was generated */' })).toEqual(
       '/* I was generated */'
     )
+  })
+
+  it('should prepend banner to the schema output', async () => {
+    const schema: JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Hello',
+      additionalProperties: false,
+      properties: {
+        world: { type: 'string' },
+      },
+    }
+    expect(await compileSchema(schema, { ...defaultTestOptions, bannerComment: '/* I was generated */' }))
+      .toMatchInlineSnapshot(`
+      "/* I was generated */
+
+      type Hello {
+        world: String
+      }"
+    `)
   })
 
   it('should compile named interface with scalar values', async () => {
