@@ -1,5 +1,5 @@
 import { compile, DEFAULT_OPTIONS, DEFAULT_PROCESSORS, JSONSchema, Options } from 'json-schema-to-typescript'
-import { generateGraphQL } from './graphqlGenerator'
+import { generateGraphQL, isIdentifierField } from './graphqlGenerator'
 
 const defaultTestOptions: Options = {
   ...DEFAULT_OPTIONS,
@@ -455,5 +455,32 @@ describe('generateGraphQL', () => {
         PIU_59
       }"
     `)
+  })
+
+  it('should use ID for identifier fields', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        carID: { type: 'string' },
+      },
+      required: ['carID'],
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        carID: ID!
+      }"
+    `)
+  })
+})
+
+describe('isIdentifierField', () => {
+  it.each(['id', 'carID', 'carId', 'ID'])('Should detect "%s" as identifier field', (keyName) => {
+    expect(isIdentifierField(keyName)).toEqual(true)
+  })
+  it.each(['idiot', 'bestIDE', 'morbid'])('Should NOT detect "%s" as identifier field', (keyName) => {
+    expect(isIdentifierField(keyName)).toEqual(false)
   })
 })

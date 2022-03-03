@@ -13,6 +13,7 @@ import {
   GraphQLEnumType,
   GraphQLFieldConfig,
   GraphQLFloat,
+  GraphQLID,
   GraphQLList,
   GraphQLNamedOutputType,
   GraphQLNonNull,
@@ -68,6 +69,9 @@ function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | un
   }
   switch (ast.type) {
     case 'STRING':
+      if (ast.keyName && isIdentifierField(ast.keyName)) {
+        return GraphQLID
+      }
       return GraphQLString
     case 'NUMBER':
       return GraphQLFloat
@@ -153,4 +157,8 @@ function isLiteralNamedUnion(ast: TUnion): ast is TLiteralNamedUnion {
 
 function sanitizeName(name: string): string {
   return name.replace(/[^[_a-zA-Z0-9_]+/g, '_')
+}
+
+export function isIdentifierField(keyName: string) {
+  return /(^i|I)[dD]$/.test(keyName)
 }
