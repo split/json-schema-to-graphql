@@ -114,6 +114,39 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile when multiple fields reference same type', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Family',
+      additionalProperties: false,
+      properties: {
+        dailyDriver: { $ref: '#/$defs/car' },
+        inService: { type: 'array', items: { $ref: '#/$defs/car' } },
+      },
+      $defs: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Family {
+        dailyDriver: Car
+        inService: [Car!]
+      }
+
+      type Car {
+        model: String
+      }"
+    `)
+  })
+
   it('should compile nested types inside of default name when no name given', async () => {
     const schema: JSONSchema = {
       $schema: 'http://json-schema.org/draft-07/schema#',
