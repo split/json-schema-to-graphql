@@ -307,4 +307,33 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should compile string literals as enum with custom names', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        power: {
+          title: 'Power',
+          type: 'string',
+          enum: ['gasoline', 'diesel', 'electric', 'hybrid'],
+          tsEnumNames: ['POWER_GASOLINE', 'POWER_DIESEL', 'POWER_ELECTRIC', 'POWER_HYBRID'],
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        power: Power
+      }
+
+      enum Power {
+        POWER_GASOLINE
+        POWER_DIESEL
+        POWER_ELECTRIC
+        POWER_HYBRID
+      }"
+    `)
+  })
 })
