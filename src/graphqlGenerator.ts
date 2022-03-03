@@ -26,46 +26,23 @@ import {
 export type GeneratorOptions = Pick<Options, 'bannerComment'>
 
 type TypeMap = Map<string, GraphQLNamedOutputType>
-type Named<T extends { standaloneName?: string }> = T & { standaloneName: string }
+type Named<T extends AST> = T & { standaloneName: string }
 
 export function generateGraphQL(ast: AST, options: GeneratorOptions = DEFAULT_OPTIONS) {
   const schema = generateGraphQLSchema(ast)
-  return [options.bannerComment, printSchema(schema)].filter(Boolean).join('\n\n')
+  return [options.bannerComment, schema && printSchema(schema)].filter(Boolean).join('\n\n')
 }
 
 export function generateGraphQLSchema(ast: AST) {
+  if (!hasStandaloneName(ast)) {
+    return null
+  }
   return new GraphQLSchema({
-    types: declareNamedTypes(ast),
+    types: [declareNamedType(ast, new Map())],
   })
 }
 
-function declareNamedTypes(ast: AST, processed = new Set<AST>(), types: TypeMap = new Map()): GraphQLNamedOutputType[] {
-  if (processed.has(ast)) return []
-  processed.add(ast)
-
-  switch (ast.type) {
-    case 'INTERFACE': {
-      if (hasStandaloneName(ast)) {
-        const namedType = declareNamedType(ast, types)
-        return [namedType]
-      } else {
-        const paramTypeASTs = ast.params.map((param) => param.ast).concat(ast.superTypes)
-        return paramTypeASTs.flatMap((ast) => declareNamedTypes(ast, processed))
-      }
-    }
-    case 'ARRAY':
-      return declareNamedTypes(ast.params, processed, types)
-
-    case 'UNION':
-      const unionType = hasStandaloneName(ast) && declareUnionType(ast, types)
-      return unionType ? [unionType] : []
-
-    default:
-      return []
-  }
-}
-
-function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: TypeMap) {
+function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: TypeMap = new Map()) {
   if (types.has(ast.standaloneName)) {
     return types.get(ast.standaloneName)!
   }
