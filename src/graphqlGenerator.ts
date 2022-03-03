@@ -1,8 +1,16 @@
 import { printSchema } from 'graphql'
 import { DEFAULT_OPTIONS, Options } from 'json-schema-to-typescript'
-import { AST, hasStandaloneName, TEnum, TNamedInterface, TUnion } from 'json-schema-to-typescript/dist/src/types/AST'
+import {
+  AST,
+  hasStandaloneName,
+  TEnum,
+  TLiteral,
+  TNamedInterface,
+  TUnion,
+} from 'json-schema-to-typescript/dist/src/types/AST'
 import {
   GraphQLBoolean,
+  GraphQLEnumType,
   GraphQLFieldConfig,
   GraphQLFloat,
   GraphQLList,
@@ -65,9 +73,14 @@ function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: T
     case 'INTERFACE':
       return declareObjectType(ast, types)
     case 'UNION':
+      if (isLiteralNamedUnion(ast)) {
+        return declareStringUnionAsEnum(ast, types)
+      }
       return declareUnionType(ast, types)
+    case 'ENUM':
+      return declareEnumType(ast, types)
     default:
-      throw new TypeError(`Not supported named type "${ast.type}"`)
+      throw new TypeError('Not supported named type')
   }
 }
 
@@ -126,4 +139,36 @@ function declareUnionType(ast: Named<TUnion>, types: TypeMap) {
   })
   types.set(ast.standaloneName, unionType)
   return unionType
+}
+
+function declareEnumType(ast: TEnum, types: TypeMap) {
+  const enumType = new GraphQLEnumType({
+    name: ast.standaloneName,
+    description: ast.comment,
+    values: Object.fromEntries(ast.params.map((param) => [param.keyName, { value: param.keyName }])),
+  })
+  types.set(ast.standaloneName, enumType)
+  return enumType
+}
+
+/**
+ * There is no way to express string literal unions in GraphQL so those need to be translated to enum
+ *
+ * Also missing mistake in types of the TLiteral as it's missing correct params
+ */
+type TLiteralWithParams = TLiteral & { params: string }
+type TLiteralNamedUnion = Omit<Named<TUnion>, 'params'> & { params: TLiteralWithParams[] }
+
+function declareStringUnionAsEnum(ast: TLiteralNamedUnion, types: TypeMap) {
+  const enumType = new GraphQLEnumType({
+    name: ast.standaloneName,
+    description: ast.comment,
+    values: Object.fromEntries(ast.params.map((param) => [param.params, { value: param.params }])),
+  })
+  types.set(ast.standaloneName, enumType)
+  return enumType
+}
+
+function isLiteralNamedUnion(ast: TUnion): ast is TLiteralNamedUnion {
+  return hasStandaloneName(ast) && ast.type === 'UNION' && ast.params[0].type === 'LITERAL'
 }

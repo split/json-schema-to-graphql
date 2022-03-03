@@ -283,4 +283,28 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should compile string literals as enum', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        power: { title: 'Power', type: 'string', enum: ['gasoline', 'diesel', 'electric', 'hybrid'] },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        power: Power
+      }
+
+      enum Power {
+        gasoline
+        diesel
+        electric
+        hybrid
+      }"
+    `)
+  })
 })
