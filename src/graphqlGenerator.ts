@@ -26,10 +26,9 @@ export function generateGraphQL(ast: AST, options: GeneratorOptions = DEFAULT_OP
 }
 
 export function generateGraphQLSchema(ast: AST) {
-  const schema = new GraphQLSchema({
+  return new GraphQLSchema({
     types: declareNamedTypes(ast),
   })
-  return schema
 }
 
 function declareNamedTypes(ast: AST, processed = new Set<AST>(), types: TypeMap = new Map()): GraphQLNamedOutputType[] {
