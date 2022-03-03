@@ -114,6 +114,26 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile nested types inside of default name when no name given', async () => {
+    const schema: JSONSchema = {
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        world: { title: 'World', type: 'object', properties: { hello: { type: 'string' } } },
+      },
+    }
+    expect(await compileSchema(schema)).toMatchInlineSnapshot(`
+      "type Test {
+        world: World
+      }
+
+      type World {
+        hello: String
+      }"
+    `)
+  })
+
   it('should compile list of strings', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',
