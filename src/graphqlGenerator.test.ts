@@ -162,4 +162,55 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should compile union of named types', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      title: 'Vehicle',
+      type: 'object',
+      oneOf: [{ $ref: '#/$defs/car' }, { $ref: '#/$defs/bike' }, { $ref: '#/$defs/airplane' }],
+      $defs: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+        },
+        bike: {
+          type: 'object',
+          title: 'Bike',
+          additionalProperties: false,
+          properties: {
+            numberOfWheels: { type: 'number' },
+          },
+          required: ['numberOfWheels'],
+        },
+        airplane: {
+          type: 'object',
+          title: 'Airplane',
+          additionalProperties: false,
+          properties: {
+            numberOfPassengers: { type: 'number' },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "union Vehicle = Car | Bike | Airplane
+
+      type Car {
+        model: String
+      }
+
+      type Bike {
+        numberOfWheels: Float!
+      }
+
+      type Airplane {
+        numberOfPassengers: Float
+      }"
+    `)
+  })
 })

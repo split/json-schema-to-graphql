@@ -1,6 +1,6 @@
-import { printSchema, typeFromAST } from 'graphql'
+import { printSchema } from 'graphql'
 import { DEFAULT_OPTIONS, Options } from 'json-schema-to-typescript'
-import { AST, hasStandaloneName, TNamedInterface } from 'json-schema-to-typescript/dist/src/types/AST'
+import { AST, hasStandaloneName, TNamedInterface, TUnion } from 'json-schema-to-typescript/dist/src/types/AST'
 import {
   GraphQLBoolean,
   GraphQLFieldConfig,
@@ -12,6 +12,7 @@ import {
   GraphQLOutputType,
   GraphQLSchema,
   GraphQLString,
+  GraphQLUnionType,
 } from 'graphql/type'
 
 export type GeneratorOptions = Pick<Options, 'bannerComment'>
@@ -45,7 +46,11 @@ function declareNamedTypes(ast: AST, processed = new Set<AST>(), types: TypeMap 
       }
     }
     case 'ARRAY':
-      return declareNamedTypes(ast.params, processed)
+      return declareNamedTypes(ast.params, processed, types)
+
+    case 'UNION':
+      const unionType = declareUnionType(ast, types)
+      return unionType ? [unionType] : []
 
     default:
       return []
@@ -97,4 +102,26 @@ function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | un
       const itemType = declareStandaloneType(ast.params, types)
       return itemType && new GraphQLList(new GraphQLNonNull(itemType))
   }
+}
+
+function declareUnionType(ast: TUnion, types: TypeMap) {
+  if (!hasStandaloneName(ast)) {
+    return null
+  }
+  if (types.has(ast.standaloneName)) {
+    return types.get(ast.standaloneName)!
+  }
+  const unionType = new GraphQLUnionType({
+    name: ast.standaloneName,
+    description: ast.comment,
+    types: ast.params.flatMap((param) => {
+      const itemType = declareStandaloneType(param, types)
+      if (itemType instanceof GraphQLObjectType) {
+        return [itemType]
+      }
+      return []
+    }),
+  })
+  types.set(ast.standaloneName, unionType)
+  return unionType
 }
