@@ -1,5 +1,5 @@
 import { compile, DEFAULT_OPTIONS, DEFAULT_PROCESSORS, JSONSchema, Options } from 'json-schema-to-typescript'
-import { generateGraphQL, isIdentifierField } from './graphqlGenerator'
+import { generateGraphQL, isIdentifierField, sanitizeName } from './graphqlGenerator'
 
 const defaultTestOptions: Options = {
   ...DEFAULT_OPTIONS,
@@ -512,5 +512,18 @@ describe('isIdentifierField', () => {
   })
   it.each(['idiot', 'bestIDE', 'morbid'])('Should NOT detect "%s" as identifier field', (keyName) => {
     expect(isIdentifierField(keyName)).toEqual(false)
+  })
+})
+
+describe('sanitizeName', () => {
+  it.each([
+    ['FOO-8_X', 'FOO_8_X'],
+    ['PIU$#59', 'PIU_59'],
+    ['PAU$$$', 'PAU'],
+    ['$POU', 'POU'],
+    ['###bar###', 'bar'],
+    ['#$%#', ''],
+  ])('Should sanitize name "%s" to "%s', (name, expected) => {
+    expect(sanitizeName(name)).toEqual(expected)
   })
 })

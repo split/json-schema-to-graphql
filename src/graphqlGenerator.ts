@@ -169,8 +169,8 @@ function isTypeKindField(ast: AST) {
   return ast.type === 'UNION' && isUnionOfStringLiterals(ast) && ast.params.length <= 1
 }
 
-function sanitizeName(name: string): string {
-  return name.replace(/[^[_a-zA-Z0-9_]+/g, '_')
+export function sanitizeName(name: string): string {
+  return name.replace(/[^[_a-zA-Z0-9_]+/g, '_').replace(/(^_+|_+$)/g, '')
 }
 
 export function isIdentifierField(keyName: string) {
