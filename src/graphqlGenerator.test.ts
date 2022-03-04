@@ -52,14 +52,16 @@ describe('generateGraphQL', () => {
         model: { type: 'string' },
         year: { type: 'integer' },
         electric: { type: 'boolean' },
+        weight: { type: 'number' },
       },
     })
 
     expect(graphql).toMatchInlineSnapshot(`
       "type CarModel {
         model: String
-        year: Float
+        year: Int
         electric: Boolean
+        weight: Float
       }"
     `)
   })
@@ -74,14 +76,16 @@ describe('generateGraphQL', () => {
         model: { type: 'string' },
         year: { type: 'integer' },
         electric: { type: 'boolean' },
+        weight: { type: 'number' },
       },
-      required: ['model', 'year', 'electric'],
+      required: ['model', 'year', 'electric', 'weight'],
     })
     expect(graphql).toMatchInlineSnapshot(`
       "type CarModel {
         model: String!
-        year: Float!
+        year: Int!
         electric: Boolean!
+        weight: Float!
       }"
     `)
   })
@@ -310,11 +314,11 @@ describe('generateGraphQL', () => {
       }
 
       type Bike {
-        numberOfWheels: Float!
+        numberOfWheels: Int!
       }
 
       type Airplane {
-        numberOfPassengers: Float
+        numberOfPassengers: Int
       }"
     `)
   })
@@ -380,11 +384,11 @@ describe('generateGraphQL', () => {
       }
 
       type Bike {
-        numberOfWheels: Float!
+        numberOfWheels: Int!
       }
 
       type Airplane {
-        numberOfPassengers: Float
+        numberOfPassengers: Int
       }"
     `)
   })

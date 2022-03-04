@@ -14,6 +14,7 @@ import {
   GraphQLFieldConfig,
   GraphQLFloat,
   GraphQLID,
+  GraphQLInt,
   GraphQLList,
   GraphQLNamedOutputType,
   GraphQLNonNull,
@@ -78,6 +79,9 @@ function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | un
       }
       return GraphQLString
     case 'NUMBER':
+      if (ast.isInteger) {
+        return GraphQLInt
+      }
       return GraphQLFloat
     case 'BOOLEAN':
       return GraphQLBoolean
