@@ -3,6 +3,7 @@ import { DEFAULT_OPTIONS, Options } from 'json-schema-to-typescript'
 import {
   AST,
   hasStandaloneName,
+  TArray,
   TEnum,
   TLiteral,
   TNamedInterface,
@@ -28,7 +29,10 @@ import {
 export type GeneratorOptions = Pick<Options, 'bannerComment'>
 
 type TypeMap = Map<AST, GraphQLNamedOutputType>
-type Named<T extends AST> = T & { standaloneName: string }
+
+type TNamedUnion = TUnion & { standaloneName: string }
+type TLiteralString = TLiteral & { params: string }
+type TUnionOfStringLiterals = Omit<TNamedUnion, 'params'> & { params: TLiteralString[] }
 
 export function generateGraphQL(ast: AST, options: GeneratorOptions = DEFAULT_OPTIONS) {
   const schema = generateGraphQLSchema(ast)
@@ -44,7 +48,7 @@ export function generateGraphQLSchema(ast: AST) {
   })
 }
 
-function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: TypeMap = new Map()) {
+function declareNamedType(ast: TNamedInterface | TEnum | TNamedUnion, types: TypeMap = new Map()) {
   if (types.has(ast)) {
     return types.get(ast)!
   }
@@ -63,10 +67,14 @@ function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: T
   }
 }
 
-function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | undefined {
+function declareStandaloneType(ast: AST, types: TypeMap, parentName: string): GraphQLOutputType | undefined {
   // Drop type fields from the objects. There is already __typename available
   if (isTypeKindField(ast)) {
     return undefined
+  }
+  const namedAST = getNamedAST(ast, parentName)
+  if (namedAST) {
+    return declareNamedType(namedAST, types)
   }
   // There is no way to define named type for list in GraphQL so keeping those standalone
   if (ast.type !== 'ARRAY' && hasStandaloneName(ast)) {
@@ -86,7 +94,7 @@ function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | un
     case 'BOOLEAN':
       return GraphQLBoolean
     case 'ARRAY':
-      const itemType = declareStandaloneType(ast.params, types)
+      const itemType = declareStandaloneType(ast.params, types, getArrayItemName(ast, parentName))
       return itemType && new GraphQLList(new GraphQLNonNull(itemType))
   }
 }
@@ -101,7 +109,7 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
           if (param.isPatternProperty || param.isUnreachableDefinition || param.keyName === '[k: string]') {
             return []
           }
-          const standaloneType = declareStandaloneType(param.ast ?? param, types)
+          const standaloneType = declareStandaloneType(param.ast ?? param, types, ast.standaloneName)
           if (!standaloneType) {
             return []
           }
@@ -115,12 +123,12 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
   return namedType
 }
 
-function declareUnionType(ast: Named<TUnion>, types: TypeMap) {
+function declareUnionType(ast: TNamedUnion, types: TypeMap) {
   const unionType = new GraphQLUnionType({
     name: ast.standaloneName,
     description: ast.comment,
     types: ast.params.flatMap((param) => {
-      const itemType = declareStandaloneType(param, types)
+      const itemType = declareStandaloneType(param, types, ast.standaloneName)
       if (itemType instanceof GraphQLObjectType) {
         return [itemType]
       }
@@ -141,8 +149,34 @@ function declareEnumType(ast: TEnum, types: TypeMap) {
   return enumType
 }
 
-type TLiteralString = TLiteral & { params: string }
-type TUnionOfStringLiterals = Omit<Named<TUnion>, 'params'> & { params: TLiteralString[] }
+function getNamedAST(ast: AST, parentName: string): TEnum | TNamedInterface | TNamedUnion | undefined {
+  // There is no way to define named type for list in GraphQL so keeping those standalone
+  if (ast.type === 'ARRAY') {
+    return undefined
+  }
+  if (hasStandaloneName(ast)) {
+    return ast
+  }
+  // Unions can't be inlined in GraphQL. Deriving name for it from keyName and parent type
+  if (ast.type === 'UNION') {
+    const standaloneName = ast.keyName ? concatName(parentName, ast.keyName) : parentName
+    return { ...ast, standaloneName }
+  }
+}
+
+function getArrayItemName(ast: TArray, parentName: string) {
+  return concatName(getArrayName(ast, parentName), 'item')
+}
+
+function getArrayName(ast: TArray, parentName: string) {
+  if (hasStandaloneName(ast)) {
+    return ast.standaloneName
+  }
+  if (ast.keyName) {
+    return concatName(parentName, ast.keyName)
+  }
+  return parentName
+}
 
 /**
  * There is no way to express string literal unions in GraphQL so those need to be translated to enum
@@ -171,6 +205,14 @@ function isTypeKindField(ast: AST) {
 
 export function sanitizeName(name: string): string {
   return name.replace(/[^[_a-zA-Z0-9_]+/g, '_').replace(/(^_+|_+$)/g, '')
+}
+
+export function concatName(...nameParts: string[]): string {
+  return nameParts.map(ucfirst).join('')
+}
+
+function ucfirst(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 export function isIdentifierField(keyName: string) {

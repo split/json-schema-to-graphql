@@ -549,6 +549,63 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should create named type for unnamed union property', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        category: {
+          type: 'string',
+          enum: ['POWER_GASOLINE', 'POWER_DIESEL', 'POWER_ELECTRIC', 'POWER_HYBRID'],
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        category: CarCategory
+      }
+
+      enum CarCategory {
+        POWER_GASOLINE
+        POWER_DIESEL
+        POWER_ELECTRIC
+        POWER_HYBRID
+      }"
+    `)
+  })
+
+  it('should create named type for unnamed array item', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        selectedCategories: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['POWER_GASOLINE', 'POWER_DIESEL', 'POWER_ELECTRIC', 'POWER_HYBRID'],
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        selectedCategories: [CarSelectedCategoriesItem!]
+      }
+
+      enum CarSelectedCategoriesItem {
+        POWER_GASOLINE
+        POWER_DIESEL
+        POWER_ELECTRIC
+        POWER_HYBRID
+      }"
+    `)
+  })
 })
 
 describe('isIdentifierField', () => {
