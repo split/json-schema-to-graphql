@@ -27,7 +27,7 @@ import {
 
 export type GeneratorOptions = Pick<Options, 'bannerComment'>
 
-type TypeMap = Map<string, GraphQLNamedOutputType>
+type TypeMap = Map<AST, GraphQLNamedOutputType>
 type Named<T extends AST> = T & { standaloneName: string }
 
 export function generateGraphQL(ast: AST, options: GeneratorOptions = DEFAULT_OPTIONS) {
@@ -45,8 +45,8 @@ export function generateGraphQLSchema(ast: AST) {
 }
 
 function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: TypeMap = new Map()) {
-  if (types.has(ast.standaloneName)) {
-    return types.get(ast.standaloneName)!
+  if (types.has(ast)) {
+    return types.get(ast)!
   }
   switch (ast.type) {
     case 'INTERFACE':
@@ -111,7 +111,7 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
         })
       ),
   })
-  types.set(ast.standaloneName, namedType)
+  types.set(ast, namedType)
   return namedType
 }
 
@@ -127,7 +127,7 @@ function declareUnionType(ast: Named<TUnion>, types: TypeMap) {
       return []
     }),
   })
-  types.set(ast.standaloneName, unionType)
+  types.set(ast, unionType)
   return unionType
 }
 
@@ -137,7 +137,7 @@ function declareEnumType(ast: TEnum, types: TypeMap) {
     description: ast.comment,
     values: Object.fromEntries(ast.params.map((param) => [sanitizeName(param.keyName), { value: param.keyName }])),
   })
-  types.set(ast.standaloneName, enumType)
+  types.set(ast, enumType)
   return enumType
 }
 
@@ -153,7 +153,7 @@ function declareUnionOfStringLiteralsAsEnum(ast: TUnionOfStringLiterals, types: 
     description: ast.comment,
     values: Object.fromEntries(ast.params.map((param) => [sanitizeName(param.params), { value: param.params }])),
   })
-  types.set(ast.standaloneName, enumType)
+  types.set(ast, enumType)
   return enumType
 }
 
