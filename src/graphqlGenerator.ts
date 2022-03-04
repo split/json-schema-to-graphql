@@ -52,8 +52,8 @@ function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: T
     case 'INTERFACE':
       return declareObjectType(ast, types)
     case 'UNION':
-      if (isLiteralNamedUnion(ast)) {
-        return declareStringUnionAsEnum(ast, types)
+      if (isUnionOfStringLiterals(ast)) {
+        return declareUnionOfStringLiteralsAsEnum(ast, types)
       }
       return declareUnionType(ast, types)
     case 'ENUM':
@@ -141,15 +141,13 @@ function declareEnumType(ast: TEnum, types: TypeMap) {
   return enumType
 }
 
+type TLiteralString = TLiteral & { params: string }
+type TUnionOfStringLiterals = Omit<Named<TUnion>, 'params'> & { params: TLiteralString[] }
+
 /**
  * There is no way to express string literal unions in GraphQL so those need to be translated to enum
- *
- * Also missing mistake in types of the TLiteral as it's missing correct params
  */
-type TLiteralWithParams = TLiteral & { params: string }
-type TLiteralNamedUnion = Omit<Named<TUnion>, 'params'> & { params: TLiteralWithParams[] }
-
-function declareStringUnionAsEnum(ast: TLiteralNamedUnion, types: TypeMap) {
+function declareUnionOfStringLiteralsAsEnum(ast: TUnionOfStringLiterals, types: TypeMap) {
   const enumType = new GraphQLEnumType({
     name: ast.standaloneName,
     description: ast.comment,
@@ -159,12 +157,16 @@ function declareStringUnionAsEnum(ast: TLiteralNamedUnion, types: TypeMap) {
   return enumType
 }
 
-function isLiteralNamedUnion(ast: TUnion): ast is TLiteralNamedUnion {
-  return hasStandaloneName(ast) && ast.type === 'UNION' && ast.params[0].type === 'LITERAL'
+function isUnionOfStringLiterals(ast: TUnion): ast is TUnionOfStringLiterals {
+  return hasStandaloneName(ast) && ast.type === 'UNION' && ast.params.every(isStringLiteral)
+}
+
+function isStringLiteral(ast: AST): ast is TLiteralString {
+  return ast.type === 'LITERAL' && typeof ast.params === 'string'
 }
 
 function isTypeKindField(ast: AST) {
-  return ast.type === 'UNION' && isLiteralNamedUnion(ast) && ast.params.length <= 1
+  return ast.type === 'UNION' && isUnionOfStringLiterals(ast) && ast.params.length <= 1
 }
 
 function sanitizeName(name: string): string {
