@@ -50,7 +50,7 @@ describe('generateGraphQL', () => {
       additionalProperties: false,
       properties: {
         model: { type: 'string' },
-        year: { type: 'number' },
+        year: { type: 'integer' },
         electric: { type: 'boolean' },
       },
     })
@@ -72,7 +72,7 @@ describe('generateGraphQL', () => {
       additionalProperties: false,
       properties: {
         model: { type: 'string' },
-        year: { type: 'number' },
+        year: { type: 'integer' },
         electric: { type: 'boolean' },
       },
       required: ['model', 'year', 'electric'],
@@ -288,7 +288,7 @@ describe('generateGraphQL', () => {
           title: 'Bike',
           additionalProperties: false,
           properties: {
-            numberOfWheels: { type: 'number' },
+            numberOfWheels: { type: 'integer' },
           },
           required: ['numberOfWheels'],
         },
@@ -297,7 +297,7 @@ describe('generateGraphQL', () => {
           title: 'Airplane',
           additionalProperties: false,
           properties: {
-            numberOfPassengers: { type: 'number' },
+            numberOfPassengers: { type: 'integer' },
           },
         },
       },
@@ -354,7 +354,7 @@ describe('generateGraphQL', () => {
           title: 'Bike',
           additionalProperties: false,
           properties: {
-            numberOfWheels: { type: 'number' },
+            numberOfWheels: { type: 'integer' },
           },
           required: ['numberOfWheels'],
         },
@@ -363,7 +363,7 @@ describe('generateGraphQL', () => {
           title: 'Airplane',
           additionalProperties: false,
           properties: {
-            numberOfPassengers: { type: 'number' },
+            numberOfPassengers: { type: 'integer' },
           },
         },
       },
@@ -467,6 +467,32 @@ describe('generateGraphQL', () => {
         carID: { type: 'string' },
       },
       required: ['carID'],
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        carID: ID!
+      }"
+    `)
+  })
+
+  it('should drop enums that are used only for literal type', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        carID: { type: 'string' },
+        type: { $ref: '#/$defs/CarType' },
+      },
+      required: ['carID'],
+      $defs: {
+        CarType: {
+          type: 'string',
+          enum: ['CAR'],
+          title: 'CarType',
+        },
+      },
     })
     expect(graphql).toMatchInlineSnapshot(`
       "type Car {

@@ -63,6 +63,10 @@ function declareNamedType(ast: TNamedInterface | TEnum | Named<TUnion>, types: T
 }
 
 function declareStandaloneType(ast: AST, types: TypeMap): GraphQLOutputType | undefined {
+  // Drop type fields from the objects. There is already __typename available
+  if (isTypeKindField(ast)) {
+    return undefined
+  }
   // There is no way to define named type for list in GraphQL so keeping those standalone
   if (ast.type !== 'ARRAY' && hasStandaloneName(ast)) {
     return declareNamedType(ast, types)
@@ -153,6 +157,10 @@ function declareStringUnionAsEnum(ast: TLiteralNamedUnion, types: TypeMap) {
 
 function isLiteralNamedUnion(ast: TUnion): ast is TLiteralNamedUnion {
   return hasStandaloneName(ast) && ast.type === 'UNION' && ast.params[0].type === 'LITERAL'
+}
+
+function isTypeKindField(ast: AST) {
+  return ast.type === 'UNION' && isLiteralNamedUnion(ast) && ast.params.length <= 1
 }
 
 function sanitizeName(name: string): string {
