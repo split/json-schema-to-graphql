@@ -151,6 +151,51 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should introduce separate type definition for duplicate named types', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Family',
+      additionalProperties: false,
+      properties: {
+        dailyDriver: { $ref: '#/$defs/car' },
+        inService: { type: 'array', items: { $ref: '#/$defs/duplicateCar' } },
+      },
+      $defs: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+        },
+        duplicateCar: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            modelName: { type: 'string' },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Family {
+        dailyDriver: Car
+        inService: [Car1!]
+      }
+
+      type Car {
+        model: String
+      }
+
+      type Car1 {
+        modelName: String
+      }"
+    `)
+  })
+
   it('should compile nested types inside of default name when no name given', async () => {
     const schema: JSONSchema = {
       $schema: 'http://json-schema.org/draft-07/schema#',
