@@ -606,6 +606,40 @@ describe('generateGraphQL', () => {
       }"
     `)
   })
+
+  it('should compute allOf to flattened named types', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'ElectricCar',
+      additionalProperties: false,
+      allOf: [
+        { $ref: '#/$defs/Car' },
+        {
+          properties: {
+            canDriveToLapland: { type: 'boolean' },
+          },
+        },
+      ],
+      $defs: {
+        Car: {
+          type: 'object',
+          title: 'Car',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string' },
+          },
+          required: ['model'],
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type ElectricCar {
+        model: String!
+        canDriveToLapland: Boolean
+      }"
+    `)
+  })
 })
 
 describe('isIdentifierField', () => {

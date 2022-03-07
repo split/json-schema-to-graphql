@@ -5,6 +5,8 @@ import {
   hasStandaloneName,
   TArray,
   TEnum,
+  TInterface,
+  TIntersection,
   TLiteral,
   TNamedInterface,
   TUnion,
@@ -31,6 +33,8 @@ export type GeneratorOptions = Pick<Options, 'bannerComment'>
 type TypeMap = Map<AST, GraphQLNamedOutputType>
 
 type TNamedUnion = TUnion & { standaloneName: string }
+type TNamedIntersection = TIntersection & { standaloneName: string }
+type TNamedAST = TNamedInterface | TEnum | TNamedUnion | TNamedIntersection
 type TLiteralString = TLiteral & { params: string }
 type TUnionOfStringLiterals = Omit<TNamedUnion, 'params'> & { params: TLiteralString[] }
 
@@ -48,7 +52,7 @@ export function generateGraphQLSchema(ast: AST) {
   })
 }
 
-function declareNamedType(ast: TNamedInterface | TEnum | TNamedUnion, types: TypeMap = new Map()) {
+function declareNamedType(ast: TNamedAST, types: TypeMap = new Map()): GraphQLNamedOutputType {
   if (types.has(ast)) {
     return types.get(ast)!
   }
@@ -62,6 +66,8 @@ function declareNamedType(ast: TNamedInterface | TEnum | TNamedUnion, types: Typ
       return declareUnionType(ast, types)
     case 'ENUM':
       return declareEnumType(ast, types)
+    case 'INTERSECTION':
+      return declareNamedType(mergeIntersectionTypes(ast), types)
     default:
       throw new TypeError('Not supported named type')
   }
@@ -75,10 +81,6 @@ function declareStandaloneType(ast: AST, types: TypeMap, parentName: string): Gr
   const namedAST = getNamedAST(ast, parentName)
   if (namedAST) {
     return declareNamedType(namedAST, types)
-  }
-  // There is no way to define named type for list in GraphQL so keeping those standalone
-  if (ast.type !== 'ARRAY' && hasStandaloneName(ast)) {
-    return declareNamedType(ast, types)
   }
   switch (ast.type) {
     case 'STRING':
@@ -149,33 +151,35 @@ function declareEnumType(ast: TEnum, types: TypeMap) {
   return enumType
 }
 
-function getNamedAST(ast: AST, parentName: string): TEnum | TNamedInterface | TNamedUnion | undefined {
+function getNamedAST(ast: AST, parentName: string): TNamedAST | undefined {
   // There is no way to define named type for list in GraphQL so keeping those standalone
   if (ast.type === 'ARRAY') {
     return undefined
   }
+  // Unions can't be inlined or intersections defined in GraphQL
+  if (ast.type === 'INTERSECTION' || ast.type === 'UNION') {
+    return inferStandaloneName(ast, parentName)
+  }
   if (hasStandaloneName(ast)) {
     return ast
   }
-  // Unions can't be inlined in GraphQL. Deriving name for it from keyName and parent type
-  if (ast.type === 'UNION') {
-    const standaloneName = ast.keyName ? concatName(parentName, ast.keyName) : parentName
-    return { ...ast, standaloneName }
-  }
 }
 
-function getArrayItemName(ast: TArray, parentName: string) {
-  return concatName(getArrayName(ast, parentName), 'item')
-}
-
-function getArrayName(ast: TArray, parentName: string) {
-  if (hasStandaloneName(ast)) {
-    return ast.standaloneName
+/**
+ * GraphQL doesn't support intersection. Merging those types to single named type
+ *
+ * Todo: migrate to json-schema-merge-allof when it keeps reference identities intact
+ */
+function mergeIntersectionTypes(ast: TNamedIntersection): TNamedInterface {
+  const interfaces = ast.params.filter((param): param is TInterface => param.type === 'INTERFACE')
+  if (interfaces.length !== ast.params.length) {
+    throw new TypeError('Intersection contains other then interface types')
   }
-  if (ast.keyName) {
-    return concatName(parentName, ast.keyName)
-  }
-  return parentName
+  return Object.assign(ast as any, {
+    type: 'INTERFACE',
+    superTypes: interfaces.flatMap((iast) => iast.superTypes),
+    params: interfaces.flatMap((iast) => iast.params),
+  })
 }
 
 /**
@@ -201,6 +205,28 @@ function isStringLiteral(ast: AST): ast is TLiteralString {
 
 function isTypeKindField(ast: AST) {
   return ast.type === 'UNION' && isUnionOfStringLiterals(ast) && ast.params.length <= 1
+}
+
+function inferStandaloneName(ast: AST, parentName: string): TNamedAST {
+  if (hasStandaloneName(ast)) {
+    return ast
+  }
+  ast.standaloneName = ast.keyName ? concatName(parentName, ast.keyName) : parentName
+  return ast as TNamedAST
+}
+
+function getArrayItemName(ast: TArray, parentName: string) {
+  return concatName(getArrayName(ast, parentName), 'item')
+}
+
+function getArrayName(ast: TArray, parentName: string) {
+  if (hasStandaloneName(ast)) {
+    return ast.standaloneName
+  }
+  if (ast.keyName) {
+    return concatName(parentName, ast.keyName)
+  }
+  return parentName
 }
 
 export function sanitizeName(name: string): string {
