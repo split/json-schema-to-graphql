@@ -14,11 +14,10 @@
     "json-schema-to-graphql": "dist/cli.js"
   },
   "scripts": {
-    "prepare": "patch-package",
+    "prepare": "patch-package && dts build",
     "analyze": "size-limit --why",
     "build": "dts build",
     "lint": "dts lint",
-    "prepare": "dts build",
     "size": "size-limit",
     "start": "dts watch",
     "test": "dts test"
