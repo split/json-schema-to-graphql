@@ -1,20 +1,25 @@
 import path from 'path'
-import { compileFromFile, DEFAULT_OPTIONS, DEFAULT_PROCESSORS } from 'json-schema-to-typescript'
-import { generateGraphQL } from './graphqlGenerator'
+import fs from 'fs'
+import { compileFromFile } from 'json-schema-to-typescript'
+import { defaultOptions } from './graphqlOptions'
 
-function main() {
+export { generateGraphQL, generateGraphQLSchema } from './graphqlGenerator'
+
+async function main() {
   const filename = process.argv[2]
+  const targetFilename = process.argv[3]
+  if (!filename || !targetFilename) {
+    return process.exit(1)
+  }
   const cwd = path.dirname(path.resolve(filename))
 
-  return compileFromFile(filename, {
-    ...DEFAULT_OPTIONS,
+  const output = await compileFromFile(filename, {
+    ...defaultOptions,
     cwd,
-    format: false,
-    processors: {
-      ...DEFAULT_PROCESSORS,
-      generate: generateGraphQL,
-    },
   })
+
+  fs.writeFileSync(targetFilename, output)
+  console.log(`✅ Wrote to GraphQL schema to "${targetFilename}"`)
 }
 
 main()

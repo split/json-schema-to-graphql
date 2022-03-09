@@ -1,14 +1,10 @@
 import { compile, DEFAULT_OPTIONS, DEFAULT_PROCESSORS, JSONSchema, Options } from 'json-schema-to-typescript'
 import { generateGraphQL, isIdentifierField, sanitizeName } from './graphqlGenerator'
+import { defaultOptions } from './graphqlOptions'
 
 const defaultTestOptions: Options = {
-  ...DEFAULT_OPTIONS,
-  format: false,
+  ...defaultOptions,
   bannerComment: '',
-  processors: {
-    ...DEFAULT_PROCESSORS,
-    generate: generateGraphQL,
-  },
 }
 
 function compileSchema(schema: JSONSchema, options: Partial<Options> = defaultTestOptions) {

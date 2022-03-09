@@ -16,10 +16,10 @@
   "scripts": {
     "prepare": "patch-package && dts build",
     "analyze": "size-limit --why",
-    "build": "dts build",
+    "build": "dts build --entry src/index.ts --entry src/cli.ts",
     "lint": "dts lint",
     "size": "size-limit",
-    "start": "dts watch",
+    "start": "dts watch --entry src/index.ts --entry src/cli.ts",
     "test": "dts test"
   },
   "husky": {
