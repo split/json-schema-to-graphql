@@ -50,7 +50,21 @@ enum HairColor {
 }
 ```
 
-## Usage
+## Installation
+
+Using Yarn:
+
+```sh
+yarn add json-schema-to-graphql
+```
+
+Or, using NPM:
+
+```sh
+npm install json-schema-to-graphql --save
+```
+
+## CLI Usage
 
 ```
 json-schema-to-graphql example.json example.graphql

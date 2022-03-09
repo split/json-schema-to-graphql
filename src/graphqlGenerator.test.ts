@@ -13,9 +13,7 @@ function compileSchema(schema: JSONSchema, options: Partial<Options> = defaultTe
 
 describe('generateGraphQL', () => {
   it('should render only banner for empty schema', () => {
-    expect(generateGraphQL({ type: 'NULL' }, { bannerComment: '/* I was generated */' })).toEqual(
-      '/* I was generated */'
-    )
+    expect(generateGraphQL({ type: 'NULL' }, { bannerComment: '# I was generated' })).toEqual('# I was generated')
   })
 
   it('should prepend banner to the schema output', async () => {
@@ -28,13 +26,14 @@ describe('generateGraphQL', () => {
         world: { type: 'string' },
       },
     }
-    expect(await compileSchema(schema, { ...defaultTestOptions, bannerComment: '/* I was generated */' }))
+    expect(await compileSchema(schema, { ...defaultTestOptions, bannerComment: '# I was generated' }))
       .toMatchInlineSnapshot(`
-      "/* I was generated */
+      "# I was generated
 
       type Hello {
         world: String
-      }"
+      }
+      "
     `)
   })
 
@@ -58,7 +57,8 @@ describe('generateGraphQL', () => {
         year: Int
         electric: Boolean
         weight: Float
-      }"
+      }
+      "
     `)
   })
 
@@ -82,7 +82,8 @@ describe('generateGraphQL', () => {
         year: Int!
         electric: Boolean!
         weight: Float!
-      }"
+      }
+      "
     `)
   })
 
@@ -110,7 +111,8 @@ describe('generateGraphQL', () => {
 
       type Car {
         model: String
-      }"
+      }
+      "
     `)
   })
 
@@ -143,7 +145,8 @@ describe('generateGraphQL', () => {
 
       type Car {
         model: String
-      }"
+      }
+      "
     `)
   })
 
@@ -188,7 +191,8 @@ describe('generateGraphQL', () => {
 
       type Car1 {
         modelName: String
-      }"
+      }
+      "
     `)
   })
 
@@ -208,7 +212,8 @@ describe('generateGraphQL', () => {
 
       type World {
         hello: String
-      }"
+      }
+      "
     `)
   })
 
@@ -228,7 +233,8 @@ describe('generateGraphQL', () => {
     expect(graphql).toMatchInlineSnapshot(`
       "type Driver {
         name: String
-      }"
+      }
+      "
     `)
   })
 
@@ -245,7 +251,8 @@ describe('generateGraphQL', () => {
     expect(graphql).toMatchInlineSnapshot(`
       "type Store {
         names: [String!]
-      }"
+      }
+      "
     `)
   })
 
@@ -277,7 +284,8 @@ describe('generateGraphQL', () => {
 
       type Car {
         model: String
-      }"
+      }
+      "
     `)
   })
 
@@ -309,7 +317,8 @@ describe('generateGraphQL', () => {
 
       type Car {
         model: String
-      }"
+      }
+      "
     `)
   })
 
@@ -360,7 +369,8 @@ describe('generateGraphQL', () => {
 
       type Airplane {
         numberOfPassengers: Int
-      }"
+      }
+      "
     `)
   })
 
@@ -430,7 +440,8 @@ describe('generateGraphQL', () => {
 
       type Airplane {
         numberOfPassengers: Int
-      }"
+      }
+      "
     `)
   })
 
@@ -454,7 +465,8 @@ describe('generateGraphQL', () => {
         diesel
         electric
         hybrid
-      }"
+      }
+      "
     `)
   })
 
@@ -483,7 +495,8 @@ describe('generateGraphQL', () => {
         POWER_DIESEL
         POWER_ELECTRIC
         POWER_HYBRID
-      }"
+      }
+      "
     `)
   })
 
@@ -498,7 +511,8 @@ describe('generateGraphQL', () => {
       "enum Power {
         FOO_8_X
         PIU_59
-      }"
+      }
+      "
     `)
   })
 
@@ -516,7 +530,8 @@ describe('generateGraphQL', () => {
     expect(graphql).toMatchInlineSnapshot(`
       "type Car {
         carID: ID!
-      }"
+      }
+      "
     `)
   })
 
@@ -542,7 +557,8 @@ describe('generateGraphQL', () => {
     expect(graphql).toMatchInlineSnapshot(`
       "type Car {
         carID: ID!
-      }"
+      }
+      "
     `)
   })
 
@@ -569,7 +585,8 @@ describe('generateGraphQL', () => {
         POWER_DIESEL
         POWER_ELECTRIC
         POWER_HYBRID
-      }"
+      }
+      "
     `)
   })
 
@@ -599,7 +616,8 @@ describe('generateGraphQL', () => {
         POWER_DIESEL
         POWER_ELECTRIC
         POWER_HYBRID
-      }"
+      }
+      "
     `)
   })
 
@@ -633,7 +651,8 @@ describe('generateGraphQL', () => {
       "type ElectricCar {
         model: String!
         canDriveToLapland: Boolean
-      }"
+      }
+      "
     `)
   })
 })
