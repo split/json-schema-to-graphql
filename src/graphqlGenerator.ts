@@ -115,9 +115,8 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
           if (!standaloneType) {
             return []
           }
-
           const type = param.isRequired ? new GraphQLNonNull(standaloneType) : standaloneType
-          return [[param.keyName, { type }]]
+          return [[param.keyName, { type, description: param.ast?.comment }]]
         })
       ),
   })

@@ -116,6 +116,66 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile descriptions as comments', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Owned things',
+      additionalProperties: false,
+      properties: {
+        car: {
+          type: 'object',
+          title: 'Car',
+          description: 'Wheeled motor vehicle used for transportation.',
+          additionalProperties: false,
+          properties: {
+            model: { type: 'string', description: 'Name of the car model given by manufacturer' },
+            power: {
+              title: 'Power',
+              type: 'string',
+              enum: ['gasoline', 'diesel', 'electric', 'hybrid'],
+              description: 'What car uses for primary power to move',
+            },
+          },
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type OwnedThings {
+        \\"\\"\\"
+        Wheeled motor vehicle used for transportation.
+        \\"\\"\\"
+        car: Car
+      }
+
+      \\"\\"\\"
+      Wheeled motor vehicle used for transportation.
+      \\"\\"\\"
+      type Car {
+        \\"\\"\\"
+        Name of the car model given by manufacturer
+        \\"\\"\\"
+        model: String
+
+        \\"\\"\\"
+        What car uses for primary power to move
+        \\"\\"\\"
+        power: Power
+      }
+
+      \\"\\"\\"
+      What car uses for primary power to move
+      \\"\\"\\"
+      enum Power {
+        gasoline
+        diesel
+        electric
+        hybrid
+      }
+      "
+    `)
+  })
+
   it('should compile when multiple fields reference same type', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',

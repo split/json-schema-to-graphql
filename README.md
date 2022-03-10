@@ -39,6 +39,10 @@ Output:
 type ExampleSchema {
   firstName: String!
   lastName: String!
+
+  """
+  Age in years
+  """
   age: Int
   hairColor: HairColor
 }
