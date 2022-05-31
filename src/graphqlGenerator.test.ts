@@ -530,6 +530,36 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile tuples with single type as lists', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      type: 'object',
+      title: 'Car',
+      additionalProperties: false,
+      properties: {
+        comparedModels: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 2 },
+        comparePower: { type: 'array', items: { $ref: '#/$defs/Power' }, minItems: 2, maxItems: 2 },
+      },
+      $defs: {
+        Power: { title: 'Power', type: 'string', enum: ['gasoline', 'diesel', 'electric', 'hybrid'] },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type Car {
+        comparedModels: [String!]
+        comparePower: [Power!]
+      }
+
+      enum Power {
+        gasoline
+        diesel
+        electric
+        hybrid
+      }
+      "
+    `)
+  })
+
   it('should compile string literals as enum with custom names', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',

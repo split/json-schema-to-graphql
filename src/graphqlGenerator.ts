@@ -9,6 +9,7 @@ import {
   TIntersection,
   TLiteral,
   TNamedInterface,
+  TTuple,
   TUnion,
 } from 'json-schema-to-typescript/dist/src/types/AST'
 import {
@@ -95,9 +96,19 @@ function declareStandaloneType(ast: AST, types: TypeMap, parentName: string): Gr
       return GraphQLFloat
     case 'BOOLEAN':
       return GraphQLBoolean
-    case 'ARRAY':
-      const itemType = declareStandaloneType(ast.params, types, getArrayItemName(ast, parentName))
+    case 'ARRAY': {
+      const itemType = declareStandaloneType(ast.params, types, getArrayOrTupleItemName(ast, parentName))
       return itemType && new GraphQLList(new GraphQLNonNull(itemType))
+    }
+    case 'TUPLE': {
+      const firstItem = ast.params[0]
+      if (ast.params.some((item) => item.type !== firstItem.type)) {
+        throw new TypeError(`Tuples containing multiple types are not supported currently`)
+      }
+      // There are no tuples in GraphQL, so representing those as lists
+      const standaloneType = declareStandaloneType(firstItem, types, getArrayOrTupleItemName(ast, parentName))
+      return standaloneType && new GraphQLList(new GraphQLNonNull(standaloneType))
+    }
   }
 }
 
@@ -214,11 +225,11 @@ function inferStandaloneName(ast: AST, parentName: string): TNamedAST {
   return ast as TNamedAST
 }
 
-function getArrayItemName(ast: TArray, parentName: string) {
-  return concatName(getArrayName(ast, parentName), 'item')
+function getArrayOrTupleItemName(ast: TArray | TTuple, parentName: string) {
+  return concatName(getArrayOrTupleName(ast, parentName), 'item')
 }
 
-function getArrayName(ast: TArray, parentName: string) {
+function getArrayOrTupleName(ast: TArray | TTuple, parentName: string) {
   if (hasStandaloneName(ast)) {
     return ast.standaloneName
   }
