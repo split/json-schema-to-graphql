@@ -11,7 +11,7 @@
     "src"
   ],
   "bin": {
-    "json-schema-to-graphql": "dist/cli.js"
+    "json-schema-to-graphql": "bin/json-schema-to-graphql.js"
   },
   "scripts": {
     "prepare": "patch-package && dts build",
