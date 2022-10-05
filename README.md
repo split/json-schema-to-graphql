@@ -96,11 +96,11 @@ This library uses [dts-cli](https://github.com/weiran-zsd/dts-cli) as zero confi
 Start development watcher with:
 
 ```sh
-yarn start
+npm run start
 ```
 
 Run tests with:
 
 ```
-yarn test
+npm run test
 ```
