@@ -14,6 +14,7 @@
     "json-schema-to-graphql": "bin/json-schema-to-graphql.js"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "prepare": "patch-package && dts build",
     "build": "dts build --entry src/index.ts --entry src/cli.ts",
     "lint": "dts lint",
