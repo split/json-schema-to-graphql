@@ -15,10 +15,8 @@
   },
   "scripts": {
     "prepare": "patch-package && dts build",
-    "analyze": "size-limit --why",
     "build": "dts build --entry src/index.ts --entry src/cli.ts",
     "lint": "dts lint",
-    "size": "size-limit",
     "start": "dts watch --entry src/index.ts --entry src/cli.ts",
     "test": "dts test"
   },
@@ -40,24 +38,12 @@
   "engines": {
     "node": ">=12"
   },
-  "size-limit": [
-    {
-      "path": "dist/index.cjs.production.min.js",
-      "limit": "10 KB"
-    },
-    {
-      "path": "dist/index.esm.js",
-      "limit": "10 KB"
-    }
-  ],
   "devDependencies": {
-    "@size-limit/preset-small-lib": "7.0.8",
     "@tsconfig/recommended": "1.0.1",
     "dts-cli": "1.4.0",
     "husky": "7.0.4",
     "patch-package": "6.4.7",
     "prettier": "2.5.1",
-    "size-limit": "7.0.8",
     "tslib": "2.3.1",
     "typescript": "4.5.5"
   },
