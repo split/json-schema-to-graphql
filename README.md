@@ -59,13 +59,13 @@ enum HairColor {
 Using Yarn:
 
 ```sh
-yarn add json-schema-to-graphql
+yarn add @splitti/json-schema-to-graphql
 ```
 
 Or, using NPM:
 
 ```sh
-npm install json-schema-to-graphql --save
+npm install @splitti/json-schema-to-graphql --save
 ```
 
 ## CLI Usage

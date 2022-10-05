@@ -3,6 +3,7 @@
   "version": "0.1.2",
   "license": "MIT",
   "author": "Henri Lahtinen",
+  "homepage": "https://github.com/split/json-schema-to-graphql#readme",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "typings": "dist/index.d.ts",
