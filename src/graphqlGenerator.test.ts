@@ -546,7 +546,16 @@ describe('generateGraphQL', () => {
     })
     expect(graphql).toMatchInlineSnapshot(`
       "type Car {
+        \\"\\"\\"
+        @minItems 2
+        @maxItems 2
+        \\"\\"\\"
         comparedModels: [String!]
+
+        \\"\\"\\"
+        @minItems 2
+        @maxItems 2
+        \\"\\"\\"
         comparePower: [Power!]
       }
 

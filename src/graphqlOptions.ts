@@ -1,4 +1,4 @@
-import { DEFAULT_OPTIONS, DEFAULT_PROCESSORS, Options } from 'json-schema-to-typescript'
+import { DEFAULT_OPTIONS, Options } from 'json-schema-to-typescript'
 import { formatGraphQL } from './graphqlFormatter'
 import { generateGraphQL } from './graphqlGenerator'
 
@@ -8,7 +8,7 @@ export const defaultOptions: Options = {
   ...DEFAULT_OPTIONS,
   bannerComment,
   processors: {
-    ...DEFAULT_PROCESSORS,
+    ...DEFAULT_OPTIONS.processors,
     generate: generateGraphQL,
     format: formatGraphQL,
   },

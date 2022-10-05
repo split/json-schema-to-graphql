@@ -1,7 +1,7 @@
 import { format as prettify } from 'prettier'
-import { DEFAULT_PROCESSORS } from 'json-schema-to-typescript'
+import { DEFAULT_OPTIONS } from 'json-schema-to-typescript'
 
-type Formatter = typeof DEFAULT_PROCESSORS.format
+type Formatter = typeof DEFAULT_OPTIONS.processors.format
 
 export const formatGraphQL: Formatter = (code, options) => {
   if (!options.format) {

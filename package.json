@@ -51,8 +51,8 @@
   },
   "dependencies": {
     "@types/json-schema-merge-allof": "0.6.1",
-    "graphql": "16.3.0",
+    "graphql": "16.6.0",
     "json-schema-merge-allof": "0.8.1",
-    "json-schema-to-typescript": "10.1.5"
+    "json-schema-to-typescript": "11.0.2"
   }
 }

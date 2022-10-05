@@ -1,0 +1,324 @@
+diff --git a/node_modules/json-schema-to-typescript/dist/src/index.d.ts b/node_modules/json-schema-to-typescript/dist/src/index.d.ts
+index 409b9e4..2f87fc8 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/index.d.ts
++++ b/node_modules/json-schema-to-typescript/dist/src/index.d.ts
+@@ -1,6 +1,14 @@
+ import { JSONSchema4 } from 'json-schema';
+ import { Options as $RefOptions } from '@bcherny/json-schema-ref-parser';
+ import { Options as PrettierOptions } from 'prettier';
++import { format } from './formatter';
++import { generate } from './generator';
++import { normalize } from './normalizer';
++import { optimize } from './optimizer';
++import { parse } from './parser';
++import { dereference } from './resolver';
++import { validate } from './validator';
++import { link } from './linker';
+ export { EnumJSONSchema, JSONSchema, NamedEnumJSONSchema, CustomTypeJSONSchema } from './types/JSONSchema';
+ export interface Options {
+     /**
+@@ -42,6 +50,10 @@ export interface Options {
+      * `minItems` and `maxItems`.
+      */
+     maxItems: number;
++    /**
++     * Processor instances used in compilation.
++     */
++    processors: typeof DEFAULT_PROCESSORS;
+     /**
+      * Append all index signatures with `| undefined` so that they are strictly typed.
+      *
+@@ -61,6 +73,16 @@ export interface Options {
+      */
+     unknownAny: boolean;
+ }
++declare const DEFAULT_PROCESSORS: {
++    dereference: typeof dereference;
++    format: typeof format;
++    generate: typeof generate;
++    link: typeof link;
++    normalize: typeof normalize;
++    optimize: typeof optimize;
++    parse: typeof parse;
++    validate: typeof validate;
++};
+ export declare const DEFAULT_OPTIONS: Options;
+ export declare function compileFromFile(filename: string, options?: Partial<Options>): Promise<string>;
+ export declare function compile(schema: JSONSchema4, name: string, options?: Partial<Options>): Promise<string>;
+diff --git a/node_modules/json-schema-to-typescript/dist/src/index.js b/node_modules/json-schema-to-typescript/dist/src/index.js
+index 84d2576..dbb151e 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/index.js
++++ b/node_modules/json-schema-to-typescript/dist/src/index.js
+@@ -77,6 +77,16 @@ var validator_1 = require("./validator");
+ var util_1 = require("util");
+ var linker_1 = require("./linker");
+ var optionValidator_1 = require("./optionValidator");
++var DEFAULT_PROCESSORS = {
++    dereference: resolver_1.dereference,
++    format: formatter_1.format,
++    generate: generator_1.generate,
++    link: linker_1.link,
++    normalize: normalizer_1.normalize,
++    optimize: optimizer_1.optimize,
++    parse: parser_1.parse,
++    validate: validator_1.validate,
++};
+ exports.DEFAULT_OPTIONS = {
+     $refOptions: {},
+     additionalProperties: true,
+@@ -87,6 +97,7 @@ exports.DEFAULT_OPTIONS = {
+     format: true,
+     ignoreMinAndMaxItems: false,
+     maxItems: 20,
++    processors: DEFAULT_PROCESSORS,
+     strictIndexSignatures: false,
+     style: {
+         bracketSpacing: false,
+@@ -140,11 +151,11 @@ function compile(schema, name, options) {
+                             (0, utils_1.log)('green', 'dereferencer', time(), '✅ Result:', dereferencedSchema);
+                         }
+                     }
+-                    linked = (0, linker_1.link)(dereferencedSchema);
++                    linked = _options.processors.link(dereferencedSchema);
+                     if (process.env.VERBOSE) {
+                         (0, utils_1.log)('green', 'linker', time(), '✅ No change');
+                     }
+-                    errors = (0, validator_1.validate)(linked, name);
++                    errors = _options.processors.validate(linked, name);
+                     if (errors.length) {
+                         errors.forEach(function (_) { return (0, utils_1.error)(_); });
+                         throw new ValidationError();
+@@ -152,15 +163,15 @@ function compile(schema, name, options) {
+                     if (process.env.VERBOSE) {
+                         (0, utils_1.log)('green', 'validator', time(), '✅ No change');
+                     }
+-                    normalized = (0, normalizer_1.normalize)(linked, dereferencedPaths, name, _options);
++                    normalized = _options.processors.normalize(linked, dereferencedPaths, name, _options);
+                     (0, utils_1.log)('yellow', 'normalizer', time(), '✅ Result:', normalized);
+-                    parsed = (0, parser_1.parse)(normalized, _options);
++                    parsed = _options.processors.parse(normalized, _options);
+                     (0, utils_1.log)('blue', 'parser', time(), '✅ Result:', parsed);
+-                    optimized = (0, optimizer_1.optimize)(parsed, _options);
++                    optimized = _options.processors.optimize(parsed, _options);
+                     (0, utils_1.log)('cyan', 'optimizer', time(), '✅ Result:', optimized);
+-                    generated = (0, generator_1.generate)(optimized, _options);
++                    generated = _options.processors.generate(optimized, _options);
+                     (0, utils_1.log)('magenta', 'generator', time(), '✅ Result:', generated);
+-                    formatted = (0, formatter_1.format)(generated, _options);
++                    formatted = _options.processors.format(generated, _options);
+                     (0, utils_1.log)('white', 'formatter', time(), '✅ Result:', formatted);
+                     return [2 /*return*/, formatted];
+             }
+diff --git a/node_modules/json-schema-to-typescript/dist/src/parser.js b/node_modules/json-schema-to-typescript/dist/src/parser.js
+index aec32ab..ae1d0ec 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/parser.js
++++ b/node_modules/json-schema-to-typescript/dist/src/parser.js
+@@ -133,6 +133,14 @@ function parseNonLiteral(schema, type, options, keyName, processed, usedNames) {
+                 standaloneName: standaloneName(schema, keyNameFromDefinition, usedNames),
+                 type: 'NULL'
+             };
++        case 'INTEGER':
++            return {
++                comment: schema.description,
++                keyName: keyName,
++                standaloneName: standaloneName(schema, keyNameFromDefinition, usedNames),
++                type: 'NUMBER',
++                isInteger: true
++            };
+         case 'NUMBER':
+             return {
+                 comment: schema.description,
+diff --git a/node_modules/json-schema-to-typescript/dist/src/types/AST.d.ts b/node_modules/json-schema-to-typescript/dist/src/types/AST.d.ts
+index 90ff8a2..c4b2552 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/types/AST.d.ts
++++ b/node_modules/json-schema-to-typescript/dist/src/types/AST.d.ts
+@@ -65,6 +65,7 @@ export interface TLiteral extends AbstractAST {
+ }
+ export interface TNumber extends AbstractAST {
+     type: 'NUMBER';
++    isInteger?: boolean;
+ }
+ export interface TNull extends AbstractAST {
+     type: 'NULL';
+diff --git a/node_modules/json-schema-to-typescript/dist/src/types/JSONSchema.d.ts b/node_modules/json-schema-to-typescript/dist/src/types/JSONSchema.d.ts
+index d3901df..768ca6e 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/types/JSONSchema.d.ts
++++ b/node_modules/json-schema-to-typescript/dist/src/types/JSONSchema.d.ts
+@@ -1,6 +1,6 @@
+ /// <reference types="lodash" />
+ import { JSONSchema4, JSONSchema4Type, JSONSchema4TypeName } from 'json-schema';
+-export declare type SchemaType = 'ALL_OF' | 'UNNAMED_SCHEMA' | 'ANY' | 'ANY_OF' | 'BOOLEAN' | 'NAMED_ENUM' | 'NAMED_SCHEMA' | 'NULL' | 'NUMBER' | 'STRING' | 'OBJECT' | 'ONE_OF' | 'TYPED_ARRAY' | 'REFERENCE' | 'UNION' | 'UNNAMED_ENUM' | 'UNTYPED_ARRAY' | 'CUSTOM_TYPE';
++export declare type SchemaType = 'ALL_OF' | 'UNNAMED_SCHEMA' | 'ANY' | 'ANY_OF' | 'BOOLEAN' | 'NAMED_ENUM' | 'NAMED_SCHEMA' | 'NULL' | 'INTEGER' | 'NUMBER' | 'STRING' | 'OBJECT' | 'ONE_OF' | 'TYPED_ARRAY' | 'REFERENCE' | 'UNION' | 'UNNAMED_ENUM' | 'UNTYPED_ARRAY' | 'CUSTOM_TYPE';
+ export declare type JSONSchemaTypeName = JSONSchema4TypeName;
+ export declare type JSONSchemaType = JSONSchema4Type;
+ export interface JSONSchema extends JSONSchema4 {
+diff --git a/node_modules/json-schema-to-typescript/dist/src/typesOfSchema.js b/node_modules/json-schema-to-typescript/dist/src/typesOfSchema.js
+index fbc0f4b..57681e7 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/typesOfSchema.js
++++ b/node_modules/json-schema-to-typescript/dist/src/typesOfSchema.js
+@@ -71,11 +71,17 @@ var matchers = {
+     NULL: function (schema) {
+         return schema.type === 'null';
+     },
++    INTEGER: function (schema) {
++        if ('enum' in schema) {
++            return false;
++        }
++        return schema.type === 'integer';
++    },
+     NUMBER: function (schema) {
+         if ('enum' in schema) {
+             return false;
+         }
+-        if (schema.type === 'integer' || schema.type === 'number') {
++        if (schema.type === 'number') {
+             return true;
+         }
+         if (!(0, JSONSchema_1.isCompound)(schema) && typeof schema.default === 'number') {
+diff --git a/node_modules/json-schema-to-typescript/src/index.ts b/node_modules/json-schema-to-typescript/src/index.ts
+index 326bd45..685204b 100644
+--- a/node_modules/json-schema-to-typescript/src/index.ts
++++ b/node_modules/json-schema-to-typescript/src/index.ts
+@@ -58,6 +58,10 @@ export interface Options {
+    * `minItems` and `maxItems`.
+    */
+   maxItems: number
++  /**
++   * Processor instances used in compilation.
++   */
++  processors: typeof DEFAULT_PROCESSORS
+   /**
+    * Append all index signatures with `| undefined` so that they are strictly typed.
+    *
+@@ -78,6 +82,17 @@ export interface Options {
+   unknownAny: boolean
+ }
+ 
++const DEFAULT_PROCESSORS = {
++  dereference,
++  format,
++  generate,
++  link,
++  normalize,
++  optimize,
++  parse,
++  validate,
++}
++
+ export const DEFAULT_OPTIONS: Options = {
+   $refOptions: {},
+   additionalProperties: true, // TODO: default to empty schema (as per spec) instead
+@@ -93,6 +108,7 @@ export const DEFAULT_OPTIONS: Options = {
+   format: true,
+   ignoreMinAndMaxItems: false,
+   maxItems: 20,
++  processors: DEFAULT_PROCESSORS,
+   strictIndexSignatures: false,
+   style: {
+     bracketSpacing: false,
+@@ -150,12 +166,12 @@ export async function compile(schema: JSONSchema4, name: string, options: Partia
+     }
+   }
+ 
+-  const linked = link(dereferencedSchema)
++  const linked = _options.processors.link(dereferencedSchema)
+   if (process.env.VERBOSE) {
+     log('green', 'linker', time(), '✅ No change')
+   }
+ 
+-  const errors = validate(linked, name)
++  const errors = _options.processors.validate(linked, name)
+   if (errors.length) {
+     errors.forEach(_ => error(_))
+     throw new ValidationError()
+@@ -164,19 +180,19 @@ export async function compile(schema: JSONSchema4, name: string, options: Partia
+     log('green', 'validator', time(), '✅ No change')
+   }
+ 
+-  const normalized = normalize(linked, dereferencedPaths, name, _options)
++  const normalized = _options.processors.normalize(linked, dereferencedPaths, name, _options)
+   log('yellow', 'normalizer', time(), '✅ Result:', normalized)
+ 
+-  const parsed = parse(normalized, _options)
++  const parsed = _options.processors.parse(normalized, _options)
+   log('blue', 'parser', time(), '✅ Result:', parsed)
+ 
+-  const optimized = optimize(parsed, _options)
++  const optimized = _options.processors.optimize(parsed, _options)
+   log('cyan', 'optimizer', time(), '✅ Result:', optimized)
+ 
+-  const generated = generate(optimized, _options)
++  const generated = _options.processors.generate(optimized, _options)
+   log('magenta', 'generator', time(), '✅ Result:', generated)
+ 
+-  const formatted = format(generated, _options)
++  const formatted = _options.processors.format(generated, _options)
+   log('white', 'formatter', time(), '✅ Result:', formatted)
+ 
+   return formatted
+diff --git a/node_modules/json-schema-to-typescript/src/parser.ts b/node_modules/json-schema-to-typescript/src/parser.ts
+index 55ffa03..08f82a5 100644
+--- a/node_modules/json-schema-to-typescript/src/parser.ts
++++ b/node_modules/json-schema-to-typescript/src/parser.ts
+@@ -181,6 +181,14 @@ function parseNonLiteral(
+         standaloneName: standaloneName(schema, keyNameFromDefinition, usedNames),
+         type: 'NULL'
+       }
++    case 'INTEGER':
++      return {
++        comment: schema.description,
++        keyName,
++        standaloneName: standaloneName(schema, keyNameFromDefinition, usedNames),
++        type: 'NUMBER',
++        isInteger: true
++      }
+     case 'NUMBER':
+       return {
+         comment: schema.description,
+diff --git a/node_modules/json-schema-to-typescript/src/types/AST.ts b/node_modules/json-schema-to-typescript/src/types/AST.ts
+index 0697be6..ad24e04 100644
+--- a/node_modules/json-schema-to-typescript/src/types/AST.ts
++++ b/node_modules/json-schema-to-typescript/src/types/AST.ts
+@@ -99,6 +99,7 @@ export interface TLiteral extends AbstractAST {
+ 
+ export interface TNumber extends AbstractAST {
+   type: 'NUMBER'
++  isInteger?: boolean
+ }
+ 
+ export interface TNull extends AbstractAST {
+diff --git a/node_modules/json-schema-to-typescript/src/types/JSONSchema.ts b/node_modules/json-schema-to-typescript/src/types/JSONSchema.ts
+index da5f56d..34d224b 100644
+--- a/node_modules/json-schema-to-typescript/src/types/JSONSchema.ts
++++ b/node_modules/json-schema-to-typescript/src/types/JSONSchema.ts
+@@ -10,6 +10,7 @@ export type SchemaType =
+   | 'NAMED_ENUM'
+   | 'NAMED_SCHEMA'
+   | 'NULL'
++  | 'INTEGER'
+   | 'NUMBER'
+   | 'STRING'
+   | 'OBJECT'
+diff --git a/node_modules/json-schema-to-typescript/src/typesOfSchema.ts b/node_modules/json-schema-to-typescript/src/typesOfSchema.ts
+index 2ec9b0d..ab8b0a1 100644
+--- a/node_modules/json-schema-to-typescript/src/typesOfSchema.ts
++++ b/node_modules/json-schema-to-typescript/src/typesOfSchema.ts
+@@ -71,11 +71,17 @@ const matchers: Record<SchemaType, (schema: JSONSchema) => boolean> = {
+   NULL(schema) {
+     return schema.type === 'null'
+   },
++  INTEGER(schema) {
++    if ('enum' in schema) {
++      return false
++    }
++    return schema.type === 'integer' 
++  },
+   NUMBER(schema) {
+     if ('enum' in schema) {
+       return false
+     }
+-    if (schema.type === 'integer' || schema.type === 'number') {
++    if (schema.type === 'number') {
+       return true
+     }
+     if (!isCompound(schema) && typeof schema.default === 'number') {
