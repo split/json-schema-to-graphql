@@ -16,7 +16,7 @@
   },
   "scripts": {
     "postinstall": "patch-package",
-    "prepare": "patch-package && dts build",
+    "prepare": "patch-package && npm run build",
     "build": "dts build --entry src/index.ts --entry src/cli.ts",
     "lint": "dts lint",
     "start": "dts watch --entry src/index.ts --entry src/cli.ts",
