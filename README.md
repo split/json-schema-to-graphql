@@ -86,7 +86,7 @@ Where `example.json` is your `JSON schema` file and `example.graphql` is the out
   - Currently has on quite limited support for objects
   - Available merge tools don't seem to maintain object reference equality causing duplicate types.
 - There is no support for tuples in GraphQL
-  - Currently no handling for those types and are just dropped
+  - Currently those are changed to lists when possible
 - There is no support for generating input types for now
 
 ## Development
