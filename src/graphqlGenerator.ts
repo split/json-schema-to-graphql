@@ -2,6 +2,7 @@ import { printSchema } from 'graphql'
 import { DEFAULT_OPTIONS, Options } from 'json-schema-to-typescript'
 import {
   AST,
+  ASTWithStandaloneName,
   hasStandaloneName,
   TArray,
   TEnum,
@@ -35,7 +36,6 @@ type TypeMap = Map<AST, GraphQLNamedOutputType>
 
 type TNamedUnion = TUnion & { standaloneName: string }
 type TNamedIntersection = TIntersection & { standaloneName: string }
-type TNamedAST = TNamedInterface | TEnum | TNamedUnion | TNamedIntersection
 type TLiteralString = TLiteral & { params: string }
 type TUnionOfStringLiterals = Omit<TNamedUnion, 'params'> & { params: TLiteralString[] }
 
@@ -53,7 +53,7 @@ export function generateGraphQLSchema(ast: AST) {
   })
 }
 
-function declareNamedType(ast: TNamedAST, types: TypeMap = new Map()): GraphQLNamedOutputType {
+function declareNamedType(ast: ASTWithStandaloneName, types: TypeMap = new Map()): GraphQLNamedOutputType {
   if (types.has(ast)) {
     return types.get(ast)!
   }
@@ -122,7 +122,7 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
           if (param.isPatternProperty || param.isUnreachableDefinition || param.keyName === '[k: string]') {
             return []
           }
-          const standaloneType = declareStandaloneType(param.ast ?? param, types, ast.standaloneName)
+          const standaloneType = declareStandaloneType(param.ast, types, ast.standaloneName)
           if (!standaloneType) {
             return []
           }
@@ -161,7 +161,7 @@ function declareEnumType(ast: TEnum, types: TypeMap) {
   return enumType
 }
 
-function getNamedAST(ast: AST, parentName: string): TNamedAST | undefined {
+function getNamedAST(ast: AST, parentName: string): ASTWithStandaloneName | undefined {
   // There is no way to define named type for list in GraphQL so keeping those standalone
   if (ast.type === 'ARRAY') {
     return undefined
@@ -217,12 +217,12 @@ function isTypeKindField(ast: AST) {
   return ast.type === 'UNION' && isUnionOfStringLiterals(ast) && ast.params.length <= 1
 }
 
-function inferStandaloneName(ast: AST, parentName: string): TNamedAST {
+function inferStandaloneName(ast: AST, parentName: string): ASTWithStandaloneName {
   if (hasStandaloneName(ast)) {
     return ast
   }
   ast.standaloneName = ast.keyName ? concatName(parentName, ast.keyName) : parentName
-  return ast as TNamedAST
+  return ast as ASTWithStandaloneName
 }
 
 function getArrayOrTupleItemName(ast: TArray | TTuple, parentName: string) {
