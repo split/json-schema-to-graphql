@@ -1,4 +1,4 @@
-import { compile, DEFAULT_OPTIONS, DEFAULT_PROCESSORS, JSONSchema, Options } from 'json-schema-to-typescript'
+import { compile, JSONSchema, Options } from 'json-schema-to-typescript'
 import { generateGraphQL, isIdentifierField, sanitizeName } from './graphqlGenerator'
 import { defaultOptions } from './graphqlOptions'
 
