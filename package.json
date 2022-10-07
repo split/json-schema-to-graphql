@@ -17,7 +17,6 @@
     "json-schema-to-graphql": "bin/json-schema-to-graphql.js"
   },
   "scripts": {
-    "postinstall": "patch-package",
     "prepare": "patch-package && npm run build",
     "build": "dts build --entry src/index.ts --entry src/cli.ts",
     "lint": "dts lint",
@@ -44,8 +43,9 @@
   },
   "devDependencies": {
     "@tsconfig/recommended": "1.0.1",
-    "dts-cli": "1.4.0",
+    "dts-cli": "1.6.0",
     "husky": "7.0.4",
+    "patch-package": "6.4.7",
     "prettier": "2.5.1",
     "tslib": "2.3.1",
     "typescript": "4.5.5"
@@ -54,7 +54,6 @@
     "@types/json-schema-merge-allof": "0.6.1",
     "graphql": "16.6.0",
     "json-schema-merge-allof": "0.8.1",
-    "json-schema-to-typescript": "11.0.2",
-    "patch-package": "6.4.7"
+    "json-schema-to-typescript": "11.0.2"
   }
 }

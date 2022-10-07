@@ -1,0 +1,24 @@
+diff --git a/node_modules/dts-cli/dist/createRollupConfig.js b/node_modules/dts-cli/dist/createRollupConfig.js
+index 7d912dd..ca45984 100644
+--- a/node_modules/dts-cli/dist/createRollupConfig.js
++++ b/node_modules/dts-cli/dist/createRollupConfig.js
+@@ -107,9 +107,7 @@ async function createRollupConfig(appPackageJson, opts, outputNum) {
+             // all bundled external modules need to be converted from CJS to ESM
+             (0, plugin_commonjs_1.default)({
+                 // use a regex to make sure to include eventual hoisted packages
+-                include: opts.format === 'umd'
+-                    ? /\/node_modules\//
+-                    : /\/regenerator-runtime\//,
++                include: /\/node_modules\//
+             }),
+             (0, plugin_json_1.default)(),
+             {
+@@ -177,7 +175,7 @@ async function createRollupConfig(appPackageJson, opts, outputNum) {
+                     'process.env.NODE_ENV': JSON.stringify(opts.env),
+                     preventAssignment: true,
+                 }),
+-            (0, rollup_plugin_sourcemaps_1.default)(),
++            (0, rollup_plugin_sourcemaps_1.default)({ exclude: /\/node_modules\// }),
+             shouldMinify &&
+                 (0, rollup_plugin_terser_1.terser)({
+                     output: { comments: false },
