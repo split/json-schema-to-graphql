@@ -1,6 +1,6 @@
 {
   "name": "@splitti/json-schema-to-graphql",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
   "author": "Henri Lahtinen",
   "homepage": "https://github.com/split/json-schema-to-graphql#readme",
