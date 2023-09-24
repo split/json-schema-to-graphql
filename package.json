@@ -19,7 +19,7 @@
   "scripts": {
     "prepare": "patch-package",
     "build": "dts build --entry src/index.ts --entry src/cli.ts",
-    "lint": "dts lint",
+    "lint": "dts lint src",
     "start": "dts watch --entry src/index.ts --entry src/cli.ts",
     "test": "dts test"
   },
