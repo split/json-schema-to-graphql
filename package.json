@@ -17,7 +17,7 @@
     "json-schema-to-graphql": "bin/json-schema-to-graphql.js"
   },
   "scripts": {
-    "prepare": "patch-package && npm run build",
+    "prepare": "patch-package",
     "build": "dts build --entry src/index.ts --entry src/cli.ts",
     "lint": "dts lint",
     "start": "dts watch --entry src/index.ts --entry src/cli.ts",
