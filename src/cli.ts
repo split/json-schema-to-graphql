@@ -8,7 +8,8 @@ export { generateGraphQL, generateGraphQLSchema } from './graphqlGenerator'
 async function main() {
   const filename = process.argv[2]
   const targetFilename = process.argv[3]
-  if (!filename || !targetFilename) {
+  if (!filename) {
+    console.info('usage: json-schema-to-graphql input_file [output_file]')
     return process.exit(1)
   }
   const cwd = path.dirname(path.resolve(filename))
@@ -18,8 +19,12 @@ async function main() {
     cwd,
   })
 
-  fs.writeFileSync(targetFilename, output)
-  console.log(`✅ Wrote to GraphQL schema to "${targetFilename}"`)
+  if (targetFilename) {
+    fs.writeFileSync(targetFilename, output)
+    console.log(`✅ Wrote to GraphQL schema to "${targetFilename}"`)
+  } else {
+    console.log(output)
+  }
 }
 
 main()
