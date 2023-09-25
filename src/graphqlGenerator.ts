@@ -155,7 +155,7 @@ function declareUnionType(ast: TNamedUnion, types: TypeMap) {
 function flattenNestedUnions(astParams: AST[]): AST[] {
   return astParams.flatMap((param) => {
     if (param.type === 'UNION') {
-      return param.params
+      return flattenNestedUnions(param.params)
     }
     return [param]
   })
