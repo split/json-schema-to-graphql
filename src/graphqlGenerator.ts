@@ -64,7 +64,7 @@ function declareNamedType(ast: ASTWithStandaloneName, types: TypeMap = new Map()
       if (isUnionOfStringLiterals(ast)) {
         return declareUnionOfStringLiteralsAsEnum(ast, types)
       }
-      return declareUnionType(ast, types)
+      return declareUnionType(flattenNestedUnions(ast), types)
     case 'ENUM':
       return declareEnumType(ast, types)
     case 'INTERSECTION':
@@ -189,6 +189,19 @@ function mergeIntersectionTypes(ast: TNamedIntersection): TNamedInterface {
     type: 'INTERFACE',
     superTypes: interfaces.flatMap((iast) => iast.superTypes),
     params: interfaces.flatMap((iast) => iast.params),
+  })
+}
+
+function flattenNestedUnions(ast: TNamedUnion): TNamedUnion {
+  const paramsWithFlattenedUnions = ast.params.flatMap((param) => {
+    if (param.type === 'UNION') {
+      return param.params
+    }
+    return [param]
+  })
+  return Object.assign(ast, {
+    type: 'UNION',
+    params: paramsWithFlattenedUnions,
   })
 }
 
