@@ -1,5 +1,7 @@
 # JSON Schema to GraphQL
 
+[![Build and test](https://github.com/split/json-schema-to-graphql/actions/workflows/main.yml/badge.svg?event=push)](https://github.com/split/json-schema-to-graphql/actions/workflows/main.yml)
+
 This is a tool that compiles `JSON Schema` to `GraphQL` schema output types. It uses awesome [json-schema-to-typescript](https://www.npmjs.com/package/json-schema-to-typescript) under the hood and it's basically custom generator for it, that instead of `TypeScript` outputs `GraphQL` using same `AST`.
 
 ## Example
