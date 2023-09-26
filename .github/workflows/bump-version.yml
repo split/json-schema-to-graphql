@@ -1,0 +1,26 @@
+name: Bump version
+on:
+  workflow_dispatch:
+    inputs:
+      versionCategory:
+        description: 'Version category'
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - prerelease
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Bump version
+        run: |
+          echo "VERSION=$(npm version ${{ github.event.inputs.versionCategory }} -m "chore(release): %s")" >> $GITHUB_ENV
+
+      - name: Create release
+        run: |
+          echo "Created new version $VERSION"
+          git show HEAD
