@@ -64,7 +64,7 @@ function declareNamedType(ast: ASTWithStandaloneName, types: TypeMap = new Map()
       if (isUnionOfStringLiterals(ast)) {
         return declareUnionOfStringLiteralsAsEnum(ast, types)
       }
-      return declareUnionType(flattenNestedUnions(ast), types)
+      return declareUnionType(ast, types)
     case 'ENUM':
       return declareEnumType(ast, types)
     case 'INTERSECTION':
@@ -136,10 +136,11 @@ function declareObjectType(ast: TNamedInterface, types: TypeMap) {
 }
 
 function declareUnionType(ast: TNamedUnion, types: TypeMap) {
+  const params = flattenNestedUnions(ast.params)
   const unionType = new GraphQLUnionType({
     name: ast.standaloneName,
     description: ast.comment,
-    types: ast.params.flatMap((param) => {
+    types: params.flatMap((param) => {
       const itemType = declareStandaloneType(param, types, ast.standaloneName)
       if (itemType instanceof GraphQLObjectType) {
         return [itemType]
@@ -149,6 +150,15 @@ function declareUnionType(ast: TNamedUnion, types: TypeMap) {
   })
   types.set(ast, unionType)
   return unionType
+}
+
+function flattenNestedUnions(astParams: AST[]): AST[] {
+  return astParams.flatMap((param) => {
+    if (param.type === 'UNION') {
+      return flattenNestedUnions(param.params)
+    }
+    return [param]
+  })
 }
 
 function declareEnumType(ast: TEnum, types: TypeMap) {
@@ -189,19 +199,6 @@ function mergeIntersectionTypes(ast: TNamedIntersection): TNamedInterface {
     type: 'INTERFACE',
     superTypes: interfaces.flatMap((iast) => iast.superTypes),
     params: interfaces.flatMap((iast) => iast.params),
-  })
-}
-
-function flattenNestedUnions(ast: TNamedUnion): TNamedUnion {
-  const paramsWithFlattenedUnions = ast.params.flatMap((param) => {
-    if (param.type === 'UNION') {
-      return param.params
-    }
-    return [param]
-  })
-  return Object.assign(ast, {
-    type: 'UNION',
-    params: paramsWithFlattenedUnions,
   })
 }
 

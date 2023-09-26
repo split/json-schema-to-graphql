@@ -580,6 +580,100 @@ describe('generateGraphQL', () => {
     `)
   })
 
+  it('should compile deeply nested unions', async () => {
+    const graphql = await compileSchema({
+      $schema: 'http://json-schema.org/draft-07/schema#',
+      title: 'Parking lot',
+      additionalProperties: false,
+      properties: {
+        vehicles: {
+          type: 'array',
+          items: { $ref: '#/$defs/vehicle' },
+        },
+      },
+      $defs: {
+        vehicle: {
+          type: 'object',
+          title: 'Vehicle',
+          oneOf: [{ $ref: '#/$defs/car' }, { $ref: '#/$defs/bike' }],
+        },
+        car: {
+          type: 'object',
+          oneOf: [{ $ref: '#/$defs/passengerCar' }, { $ref: '#/$defs/lorry' }],
+        },
+        passengerCar: {
+          type: 'object',
+          oneOf: [{ $ref: '#/$defs/sedan' }, { $ref: '#/$defs/convertible' }],
+        },
+        sedan: {
+          type: 'object',
+          title: 'SedanCar',
+          additionalProperties: false,
+          properties: {
+            numberOfPassengers: { type: 'integer' },
+            model: { type: 'string' },
+          },
+        },
+        convertible: {
+          type: 'object',
+          title: 'ConvertibleCar',
+          additionalProperties: false,
+          properties: {
+            foldableRoof: { type: 'boolean' },
+            numberOfPassengers: { type: 'integer' },
+            model: { type: 'string' },
+          },
+        },
+        lorry: {
+          type: 'object',
+          title: 'Lorry',
+          additionalProperties: false,
+          properties: {
+            maxLoad: { type: 'number' },
+            model: { type: 'string' },
+          },
+        },
+        bike: {
+          type: 'object',
+          title: 'Bike',
+          additionalProperties: false,
+          properties: {
+            numberOfWheels: { type: 'integer' },
+          },
+          required: ['numberOfWheels'],
+        },
+      },
+    })
+    expect(graphql).toMatchInlineSnapshot(`
+      "type ParkingLot {
+        vehicles: [Vehicle!]
+      }
+
+      union Vehicle = SedanCar | ConvertibleCar | Lorry | Bike
+
+      type SedanCar {
+        numberOfPassengers: Int
+        model: String
+      }
+
+      type ConvertibleCar {
+        foldableRoof: Boolean
+        numberOfPassengers: Int
+        model: String
+      }
+
+      type Lorry {
+        maxLoad: Float
+        model: String
+      }
+
+      type Bike {
+        numberOfWheels: Int!
+      }
+      "
+    `)
+  })
+
   it('should compile string literals as enum', async () => {
     const graphql = await compileSchema({
       $schema: 'http://json-schema.org/draft-07/schema#',
