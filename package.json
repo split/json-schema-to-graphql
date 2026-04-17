@@ -43,12 +43,17 @@
   "devDependencies": {
     "@tsconfig/recommended": "1.0.1",
     "ajv": "^6.14.0",
+    "braces": "^3.0.3",
     "decode-uri-component": "^0.2.2",
     "dts-cli": "1.6.0",
     "husky": "7.0.4",
     "json-schema-to-typescript": "11.0.2",
     "json5": "^2.2.3",
+    "lodash": "^4.17.21",
+    "micromatch": "^4.0.8",
+    "minimatch": "^3.1.5",
     "patch-package": "6.4.7",
+    "picomatch": "^2.3.2",
     "prettier": "2.5.1",
     "tslib": "2.3.1",
     "typescript": "4.5.5"
